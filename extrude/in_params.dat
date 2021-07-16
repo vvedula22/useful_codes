@@ -1,0 +1,36 @@
+##############
+Stitch Params
+nStart   nEnd   nFreq    deltaT
+7        26       1      0.03125
+##############
+Face Parameters
+nFaces
+3
+faceId     faceNames
+10         wall.vtp
+20         inlet.vtp
+30         outlet.vtp
+##############
+Edge Parameters
+numEdges
+2
+edgeID  face1   face2   Extrude
+1        10      20       1
+2        10      30       1
+##############
+Extrude Options
+edgeNum       Dir of Extr.    Step    nLev   Flat Edg.   Write to file
+1          1192   688  1553   1.0     5       1              0
+2          1402   777  1358   1.0     5       1              0
+##############
+Smoother Params
+nIter   alpha    volCorrec.    tol.
+5       0.8      1             1.0E-3
+##############
+output format
+A
+Use Different Wall To Extrude
+1
+Time Point of Surface to be Extruded
+9
+

@@ -1,0 +1,12 @@
+#Num faces (Leaflets)
+3
+#VTU file names
+MAVR001_av07_L1.vtu
+MAVR001_av07_L2.vtu
+MAVR001_av07_L3.vtu
+# 2 landmarks on each face
+826    750
+175    860
+603    731
+#Output dir
+mesh-surfaces

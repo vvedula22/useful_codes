@@ -1,0 +1,14 @@
+nsd
+3
+nstart    nend    nfreq
+5         1250    5
+dt
+5E-4
+prefix
+../384-procs/vtkFiles/result_
+postfix
+vtk
+KE_Diss   Write To File
+1         0
+rho       viscosity
+0.00106   0.004

@@ -1,0 +1,18 @@
+nsd
+2
+nstart    nend    nfreq
+5         580     5
+dt
+1E-3
+prefix
+../24-procs/vtuFiles/result_
+Area-averaged WSS
+1
+Probe velocity
+191
+ROI (oft)
+roi.dat
+Wall EBC file path
+../mesh-surfaces/wall.ebc
+Output file header
+01-control_case01

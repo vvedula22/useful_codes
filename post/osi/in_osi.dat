@@ -1,0 +1,12 @@
+# nsd
+3
+nstart    nend    nfreq
+40        200     40
+# dt
+2E-4
+# VTP files location and prefix
+../select_vtu/vtpFiles/result_
+# Area-averaged WSS
+1
+# ROI file path
+roi.dat

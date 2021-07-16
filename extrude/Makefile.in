@@ -1,0 +1,19 @@
+
+FORTRAN = gfortran
+FFLAGS  = -O3
+#FCFLAGS  = -lstdc++
+
+CXX     = g++
+CXXFLAGS= -O3
+
+CC      = gcc
+CFLAGS  = -O3
+
+LFLAGS = -lz #-lstdc++
+
+debug=0
+ifeq ($(debug),1)
+    FFLAGS += -g -fbacktrace -fbounds-check -Wall -pedantic 
+    CXXFLAGS += -g -Wall -pedantic -fbounds-check
+endif
+

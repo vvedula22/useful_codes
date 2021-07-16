@@ -1,0 +1,48 @@
+
+Automatic piping vmtkimagereader
+Parsing options vmtkimagereader
+    InputFileName = 01/00001_2.16.840.1.113669.632.21.2406495655.2808894265.59270871923480011.dcm
+Explicit piping vmtkimagereader
+Input vmtkimagereader members:
+    Id = 0
+    Disabled = 0
+    Format = 
+    GuessFormat = 1
+    UseITKIO = 1
+    Image = 0
+    InputFileName = 01/00001_2.16.840.1.113669.632.21.2406495655.2808894265.59270871923480011.dcm
+    InputFilePrefix = 
+    InputFilePattern = 
+    InputDirectoryName = 
+    DataExtent = [-1, -1, -1, -1, -1, -1]
+    HeaderSize = 0
+    DataSpacing = [1.0, 1.0, 1.0]
+    DataOrigin = [0.0, 0.0, 0.0]
+    DesiredOrientation = native
+    DataByteOrder = littleendian
+    DataScalarType = float
+    FileDimensionality = 3
+    Flip = [0, 0, 0]
+    AutoOrientDICOMImage = 1
+    ImageOutputFileName = 
+Executing vmtkimagereader ...
+Spacing 1.093740 1.093750 5.999880
+Origin -43.033600 169.085007 194.848999
+Dimensions 256 256 11
+Done executing vmtkimagereader.
+Output vmtkimagereader members:
+    Id = 0
+    Image = vtkImageData
+    RasToIjkMatrixCoefficients = [-0.33207522168909287, -0.8518566194223601, -2.7292964549079472e-06, 129.74632180352833, 0.32110259927129925, -0.12517118857831727, -0.8468433512982465, 199.989351360229, 0.14383313722298344, -0.056069990313578275, 0.06282571797157942, 3.42872410185649, -0.0, 0.0, -0.0, 1.0]
+    XyzToRasMatrixCoefficients = [-0.3632039529702284, 0.3512059679529837, 0.8629816085068139, -286.19833947332086, -0.9317096589270122, -0.13690598750753458, -0.3364132310815044, 217.68871722329823, -2.985140704569536e-06, -0.9262349154824573, 0.3769467884626347, 278.01360304801267, 0.0, 0.0, 0.0, 1.0]
+
+No module named vmtkimagewrite
+Traceback (most recent call last):
+  File "/home/vvedula/Software/VMTK/vmtk-build/Install/lib/python2.7/site-packages/vmtk/pypeserver.py", line 46, in RunPypeProcess
+    pipe.Execute()
+  File "/home/vvedula/Software/VMTK/vmtk-build/Install/lib/python2.7/site-packages/vmtk/pype.py", line 256, in Execute
+    self.PrintError(str(e))
+  File "/home/vvedula/Software/VMTK/vmtk-build/Install/lib/python2.7/site-packages/vmtk/pype.py", line 69, in PrintError
+    raise RuntimeError(errorMessage)
+RuntimeError: No module named vmtkimagewrite
+

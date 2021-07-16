@@ -1,0 +1,65 @@
+
+Automatic piping vmtkimagereader
+Parsing options vmtkimagereader
+    InputFileName = 01/00001_2.16.840.1.113669.632.21.2406495655.2808894265.95233816422175911.dcm
+Explicit piping vmtkimagereader
+Input vmtkimagereader members:
+    Id = 0
+    Disabled = 0
+    Format = 
+    GuessFormat = 1
+    UseITKIO = 1
+    Image = 0
+    InputFileName = 01/00001_2.16.840.1.113669.632.21.2406495655.2808894265.95233816422175911.dcm
+    InputFilePrefix = 
+    InputFilePattern = 
+    InputDirectoryName = 
+    DataExtent = [-1, -1, -1, -1, -1, -1]
+    HeaderSize = 0
+    DataSpacing = [1.0, 1.0, 1.0]
+    DataOrigin = [0.0, 0.0, 0.0]
+    DesiredOrientation = native
+    DataByteOrder = littleendian
+    DataScalarType = float
+    FileDimensionality = 3
+    Flip = [0, 0, 0]
+    AutoOrientDICOMImage = 1
+    ImageOutputFileName = 
+Executing vmtkimagereader ...
+Spacing 1.250000 1.250000 4.000000
+Origin 159.399994 142.800003 37.599998
+Dimensions 256 256 32
+Done executing vmtkimagereader.
+Output vmtkimagereader members:
+    Id = 0
+    Image = vtkImageData
+    RasToIjkMatrixCoefficients = [-0.8, -0.0, 0.0, 127.5199951171875, -0.0, -0.8, -0.0, 114.24000244140625, 0.0, -0.0, 0.25, -9.399999618530273, -0.0, 0.0, -0.0, 1.0]
+    XyzToRasMatrixCoefficients = [-1.0, 0.0, 0.0, 318.7999877929687, 0.0, -1.0, 0.0, 285.60000610351557, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+
+Automatic piping vmtkimagewriter
+    Image = vmtkimagereader-0.Image
+    RasToIjkMatrixCoefficients = vmtkimagereader-0.RasToIjkMatrixCoefficients
+Parsing options vmtkimagewriter
+    OutputFileName = vol3d_01.vti
+Explicit piping vmtkimagewriter
+Input vmtkimagewriter members:
+    Id = 0
+    Disabled = 0
+    Image = vtkImageData
+    ImageInputFileName = 
+    Format = 
+    GuessFormat = 1
+    UseITKIO = 1
+    ApplyTransform = 0
+    OutputFileName = vol3d_01.vti
+    OutputFileName = vol3d_01.vti
+    OutputRawFileName = 
+    OutputDirectoryName = 
+    PixelRepresentation = 
+    WindowLevel = [1.0, 0.0]
+    RasToIjkMatrixCoefficients = [-0.8, -0.0, 0.0, 127.5199951171875, -0.0, -0.8, -0.0, 114.24000244140625, 0.0, -0.0, 0.25, -9.399999618530273, -0.0, 0.0, -0.0, 1.0]
+Executing vmtkimagewriter ...
+Writing VTK XML image file.
+Done executing vmtkimagewriter.
+Output vmtkimagewriter members:
+    Id = 0

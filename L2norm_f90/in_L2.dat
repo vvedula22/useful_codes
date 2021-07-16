@@ -1,0 +1,37 @@
+# numVar
+4
+
+# numFiles
+5
+
+# variableNameList
+ST_Displacement  3
+ST_Velocity      3
+ST_Pressure      1
+ST_Stress        6
+
+# exactSolutionFileList
+../N004/exact_soln_t0.5000.vtu
+../N008/exact_soln_t0.5000.vtu
+../N016/exact_soln_t0.5000.vtu
+../N032/exact_soln_t0.5000.vtu
+../N064/exact_soln_t0.5000.vtu
+
+# numericalSolutionFileList
+../N004/result_5000.vtu
+../N008/result_5000.vtu
+../N016/result_5000.vtu
+../N032/result_5000.vtu
+../N064/result_5000.vtu
+
+# gridSpacingList
+0.250000
+0.125000
+0.062500
+0.031250
+0.015625
+
+
+
+
+
