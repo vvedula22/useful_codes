@@ -1,4 +1,41 @@
-!#######################################################################
+!
+! Copyright (c) Stanford University, The Regents of the University of
+!               California, and others.
+!
+! All Rights Reserved.
+!
+! See Copyright-SimVascular.txt for additional details.
+!
+! Permission is hereby granted, free of charge, to any person obtaining
+! a copy of this software and associated documentation files (the
+! "Software"), to deal in the Software without restriction, including
+! without limitation the rights to use, copy, modify, merge, publish,
+! distribute, sublicense, and/or sell copies of the Software, and to
+! permit persons to whom the Software is furnished to do so, subject
+! to the following conditions:
+!
+! The above copyright notice and this permission notice shall be included
+! in all copies or substantial portions of the Software.
+!
+! THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+! IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+! TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+! PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
+! OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+! EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+! PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+! PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+! LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+! NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+!
+!-----------------------------------------------------------------------
+!
+!     This module defines data structures for Bueno-Orovio cellular
+!     activation model for cardiac electrophysiology.
+!
+!-----------------------------------------------------------------------
+
       MODULE BOMOD
       IMPLICIT NONE
 
@@ -11,7 +48,7 @@
       INTEGER, INTENT(IN) :: nX
       REAL(KIND=8), INTENT(INOUT) :: X(nX)
 
-      INCLUDE "params_BO.f"
+      INCLUDE "PARAMS_BO.f"
 
       X(1) = Voffset
       X(2) = 1.0D0
@@ -22,24 +59,25 @@
       END SUBROUTINE BO_INIT
 !-----------------------------------------------------------------------
 !     Time integration performed using Forward Euler method
-      SUBROUTINE BO_INTEGFE(zid, nX, X, Ts, Ti, Istim, RPAR)
+      SUBROUTINE BO_INTEGFE(imyo, nX, X, Ts, Ti, Istim, Ksac, RPAR)
       IMPLICIT NONE
-      INTEGER, INTENT(IN) :: zid, nX
-      REAL(KIND=8), INTENT(IN) :: Ts, Ti, Istim
+      INTEGER, INTENT(IN) :: imyo, nX
+      REAL(KIND=8), INTENT(IN) :: Ts, Ti, Istim, Ksac
       REAL(KIND=8), INTENT(INOUT) :: X(nX), RPAR(5)
 
-      INCLUDE "params_BO.f"
+      INCLUDE "PARAMS_BO.f"
 
-      INTEGER :: i, iPar
-      REAL(KIND=8) :: t, dt, f(nX), fe
+      REAL(KIND=8) :: t, dt, f(nX), fext, Isac
 
-      t  = Ts / Tscale
-      dt = Ti / Tscale
-      fe = Istim*Tscale/Vscale
+      t    = Ts / Tscale
+      dt   = Ti / Tscale
+
+      Isac = Ksac * (Vrest - X(1))
+      fext = (Istim + Isac) * Tscale / Vscale
 
       X(1) = (X(1) - Voffset)/Vscale
 
-      CALL BO_GETF(zid, nX, t, X, f, fe, RPAR)
+      CALL BO_GETF(imyo, nX, X, f, fext, RPAR)
       X(:) = X(:) + dt*f(:)
 
       X(1) = X(1)*Vscale + Voffset
@@ -48,44 +86,41 @@
       END SUBROUTINE BO_INTEGFE
 !-----------------------------------------------------------------------
 !     Time integration performed using 4th order Runge-Kutta method
-      SUBROUTINE BO_INTEGRK(zid, nX, X, Ts, Ti, Istim, RPAR)
+      SUBROUTINE BO_INTEGRK(imyo, nX, X, Ts, Ti, Istim, Ksac, RPAR)
       IMPLICIT NONE
-      INTEGER, INTENT(IN) :: zid, nX
-      REAL(KIND=8), INTENT(IN) :: Ts, Ti, Istim
+      INTEGER, INTENT(IN) :: imyo, nX
+      REAL(KIND=8), INTENT(IN) :: Ts, Ti, Istim, Ksac
       REAL(KIND=8), INTENT(INOUT) :: X(nX), RPAR(5)
 
-      INCLUDE "params_BO.f"
+      INCLUDE "PARAMS_BO.f"
 
-      INTEGER :: i
-      REAL(KIND=8) :: t, trk, dt, fe, Xrk(nX,4), frk(nX,4)
+      REAL(KIND=8) :: t, dt, dt6, fext, Isac, Xrk(nX), frk(nX,4)
 
-      t  = Ts / Tscale
-      dt = Ti / Tscale
-      fe = Istim*Tscale/Vscale
+      t    = Ts / Tscale
+      dt   = Ti / Tscale
+      dt6  = dt/6.0D0
 
+      Isac = Ksac * (Vrest - X(1))
+      fext = (Istim + Isac) * Tscale / Vscale
       X(1) = (X(1) - Voffset)/Vscale
+
 !     RK4: 1st pass
-      trk = t
-      Xrk(:,1) = X(:)
-      CALL BO_GETF(zid, nX, trk, Xrk(:,1), frk(:,1), fe, RPAR)
+      Xrk  = X
+      CALL BO_GETF(imyo, nX, Xrk, frk(:,1), fext, RPAR)
 
 !     RK4: 2nd pass
-      trk = t + dt/2.0D0
-      Xrk(:,2) = X(:) + dt*frk(:,1)/2.0D0
-      CALL BO_GETF(zid, nX, trk, Xrk(:,2), frk(:,2), fe, RPAR)
+      Xrk  = X + dt*frk(:,1)/2.0D0
+      CALL BO_GETF(imyo, nX, Xrk, frk(:,2), fext, RPAR)
 
 !     RK4: 3rd pass
-      trk = t + dt/2.0D0
-      Xrk(:,3) = X(:) + dt*frk(:,2)/2.0D0
-      CALL BO_GETF(zid, nX, trk, Xrk(:,3), frk(:,3), fe, RPAR)
+      Xrk  = X + dt*frk(:,2)/2.0D0
+      CALL BO_GETF(imyo, nX, Xrk, frk(:,3), fext, RPAR)
 
 !     RK4: 4th pass
-      trk = t + dt
-      Xrk(:,4) = X(:) + dt*frk(:,3)
-      CALL BO_GETF(zid, nX, trk, Xrk(:,4), frk(:,4), fe, RPAR)
+      Xrk  = X + dt*frk(:,3)
+      CALL BO_GETF(imyo, nX, Xrk, frk(:,4), fext, RPAR)
 
-      X(:) = X(:) + (dt/6.0D0) * ( frk(:,1) + 2.0D0*frk(:,2) +
-     2   2.0D0*frk(:,3) + frk(:,4) )
+      X = X + dt6*(frk(:,1) + 2.0D0*(frk(:,2) + frk(:,3)) + frk(:,4))
 
       X(1) = X(1)*Vscale + Voffset
 
@@ -93,22 +128,23 @@
       END SUBROUTINE BO_INTEGRK
 !-----------------------------------------------------------------------
 !     Time integration performed using Crank-Nicholson method
-      SUBROUTINE BO_INTEGCN2(zid, nX, Xn, Ts, Ti, Istim, IPAR, RPAR)
+      SUBROUTINE BO_INTEGCN2(imyo, nX, Xn, Ts, Ti, Istim, Ksac, IPAR,
+     2   RPAR)
       USE MATFUN
       IMPLICIT NONE
-      INTEGER, INTENT(IN) :: zid, nX
+      INTEGER, INTENT(IN) :: imyo, nX
       INTEGER, INTENT(INOUT) :: IPAR(2)
-      REAL(KIND=8), INTENT(IN) :: Ts, Ti, Istim
+      REAL(KIND=8), INTENT(IN) :: Ts, Ti, Istim, Ksac
       REAL(KIND=8), INTENT(INOUT) :: Xn(nX), RPAR(5)
 
-      INCLUDE "params_BO.f"
+      INCLUDE "PARAMS_BO.f"
 
       REAL(KIND=8), PARAMETER :: eps = EPSILON(eps)
 
       INTEGER :: i, k, itMax
       LOGICAL :: l1, l2, l3
-      REAL(KIND=8) :: t, dt, fe, atol, rtol, Xk(nX), fn(nX), fk(nX),
-     2   rK(nX), Im(nX,nX), JAC(nX,nX), rmsA, rmsR
+      REAL(KIND=8) :: t, dt, fext, atol, rtol, Xk(nX), fn(nX), fk(nX),
+     2   rK(nX), Im(nX,nX), JAC(nX,nX), rmsA, rmsR, Isac
 
       itMax = IPAR(1)
       atol  = RPAR(1)
@@ -116,12 +152,13 @@
 
       t     = Ts / Tscale
       dt    = Ti / Tscale
-      fe = Istim*Tscale/Vscale
+      Isac  = Ksac * (Vrest - Xn(1))
+      fext  = (Istim + Isac) * Tscale / Vscale
 
       Xn(1) = (Xn(1) - Voffset)/Vscale
       Im    = MAT_ID(nX)
 
-      CALL BO_GETF(zid, nX, t, Xn, fn, fe, RPAR)
+      CALL BO_GETF(imyo, nX, Xn, fn, fext, RPAR)
 
       k  = 0
       Xk = Xn
@@ -131,7 +168,7 @@
       t  = Ts + dt
       DO
          k = k + 1
-         CALL BO_GETF(zid, nX, t, Xk, fk, fe, RPAR)
+         CALL BO_GETF(imyo, nX, Xk, fk, fext, RPAR)
          rK(:) = Xk(:) - Xn(:) - 0.5D0*dt*(fk(:) + fn(:))
 
          rmsA = 0D0
@@ -148,14 +185,14 @@
          l3   = rmsR .LE. rtol
          IF (l1 .OR. l2 .OR. l3) EXIT
 
-         CALL BO_GETJ(zid, nX, t, Xk, JAC)
+         CALL BO_GETJ(imyo, nX, Xk, JAC)
          JAC   = Im - 0.5D0*dt*JAC
          JAC   = MAT_INV(JAC, nX)
          rK(:) = MATMUL(JAC, rK)
          Xk(:) = Xk(:) - rK(:)
       END DO
       Xn(:) = Xk(:)
-      CALL BO_GETF(zid, nX, t, Xn, fn, fe, RPAR)
+      CALL BO_GETF(imyo, nX, Xn, fn, fext, RPAR)
       Xn(1) = Xn(1)*Vscale + Voffset
 
       IF (.NOT.l2 .AND. .NOT.l3) IPAR(2) = IPAR(2) + 1
@@ -163,14 +200,14 @@
       RETURN
       END SUBROUTINE BO_INTEGCN2
 !-----------------------------------------------------------------------
-      SUBROUTINE BO_GETF(i, n, t, X, f, I_ext, RPAR)
+      SUBROUTINE BO_GETF(i, n, X, f, fext, RPAR)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: i, n
-      REAL(KIND=8), INTENT(IN) :: t, X(n), I_ext
+      REAL(KIND=8), INTENT(IN) :: X(n), fext
       REAL(KIND=8), INTENT(OUT) :: f(n)
       REAL(KIND=8), INTENT(INOUT) :: RPAR(5)
 
-      INCLUDE "params_BO.f"
+      INCLUDE "PARAMS_BO.f"
 
       REAL(KIND=8) :: u, v, w, s, H_uv, H_uw, H_umv, H_uo, taum_v,
      2   taum_w, tau_so, tau_s, tau_o, v_inf, w_inf, I_fi, I_so, I_si
@@ -203,7 +240,7 @@
       I_so =  (u-u_o(i))*(1.0D0-H_uw)/tau_o + H_uw/tau_so
       I_si = -H_uw*w*s/tau_si(i)
 
-      f(1) = -(I_fi + I_so + I_si + I_ext)
+      f(1) = -(I_fi + I_so + I_si + fext)
 
       f(2) = (1.0D0-H_uv)*(v_inf-v)/taum_v - H_uv*v/taup_v(i)
 
@@ -218,13 +255,13 @@
       RETURN
       END SUBROUTINE BO_GETF
 !-----------------------------------------------------------------------
-      SUBROUTINE BO_GETJ(i, n, t, X, JAC)
+      SUBROUTINE BO_GETJ(i, n, X, JAC)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: i, n
-      REAL(KIND=8), INTENT(IN) :: t, X(n)
+      REAL(KIND=8), INTENT(IN) :: X(n)
       REAL(KIND=8), INTENT(OUT) :: JAC(n,n)
 
-      INCLUDE "params_BO.f"
+      INCLUDE "PARAMS_BO.f"
 
       REAL(KIND=8) :: u, v, w, s, H_uv, H_uw, H_umv, H_uo, D_uw, D_uv,
      2   taum_v, taum_w, tau_so, tau_s, tau_o, v_inf, w_inf, n1, n2, n3
@@ -290,23 +327,57 @@
       RETURN
       END SUBROUTINE BO_GETJ
 !-----------------------------------------------------------------------
-      SUBROUTINE BO_ACTCPL(nX, X, dt, epsX, Tact)
+!     Compute activation force for electromechanics based on active
+!     stress model
+      SUBROUTINE BO_ACTVSTRS(X, dt, Tact, epsX)
       IMPLICIT NONE
-      INTEGER, INTENT(IN) :: nX
-      REAL(KIND=8), INTENT(IN) :: X(nX), dt
+      REAL(KIND=8), INTENT(IN) :: X, dt
       REAL(KIND=8), INTENT(OUT) :: epsX
       REAL(KIND=8), INTENT(INOUT) :: Tact
 
-      INCLUDE "params_BO.f"
+      INCLUDE "PARAMS_BO.f"
 
       REAL(KIND=8) :: nr
 
-      epsX = eps0 + (eps1 - eps0)*EXP(-EXP(-xi_T*(X(1) - Xcrit)))
-      nr   = Tact + (epsX*dt* K_T*(X(1)-Xrest))
+      epsX = EXP(-EXP(-xi_T*(X - Vcrit)))
+      epsX = eps_0 + (eps_i - eps_0)*epsX
+      nr   = Tact + epsX*dt*eta_T*(X - Vrest)
       Tact = nr / (1.0D0 + epsX*dt)
 
       RETURN
-      END SUBROUTINE BO_ACTCPL
+      END SUBROUTINE BO_ACTVSTRS
+!-----------------------------------------------------------------------
+!     Compute macroscopic fiber strain based on sacromere force-length
+!     relationship and slow inward current variable (s)
+      SUBROUTINE BO_ACTVSTRN(c, I4f, dt, gf)
+      IMPLICIT NONE
+      REAL(KIND=8), INTENT(IN) :: c, I4f, dt
+      REAL(KIND=8), INTENT(INOUT) :: gf
+
+      INCLUDE "PARAMS_BO.f"
+
+      REAL(KIND=8) :: SL, Fa, rtmp
+
+!     fiber length
+      SL = I4f * SL0
+
+!     Sacromere force-length relationship
+      IF (SL.GE.SLmin .AND. SL.LE.SLmax) THEN
+         SL = 0.5D0*f0 + fc1*COS(SL) + fs1*SIN(SL) +
+     2      fc2*COS(2.0D0*SL) + fs2*SIN(2.0D0*SL)  +
+     3      fc3*COS(3.0D0*SL) + fs3*SIN(3.0D0*SL)
+      ELSE
+         SL = 0.0D0
+      END IF
+
+!     Active force
+      Fa   = alFa * (c-c0)*(c-c0) * SL
+
+      rtmp = 2.0D0*I4f*(1.0D0/(1.0D0+gf)**3.0D0 - 1.0D0)
+      gf = gf + dt*(Fa + rtmp)/(mu_C * c * c)
+
+      RETURN
+      END SUBROUTINE BO_ACTVSTRN
 !--------------------------------------------------------------------
       FUNCTION STEP(r)
       IMPLICIT NONE

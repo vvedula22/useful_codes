@@ -1,6 +1,40 @@
-!#######################################################################
-!     Constants for TenTusscher-Panfilov Ventricular Myocyte Model
-!#######################################################################
+!
+! Copyright (c) Stanford University, The Regents of the University of
+!               California, and others.
+!
+! All Rights Reserved.
+!
+! See Copyright-SimVascular.txt for additional details.
+!
+! Permission is hereby granted, free of charge, to any person obtaining
+! a copy of this software and associated documentation files (the
+! "Software"), to deal in the Software without restriction, including
+! without limitation the rights to use, copy, modify, merge, publish,
+! distribute, sublicense, and/or sell copies of the Software, and to
+! permit persons to whom the Software is furnished to do so, subject
+! to the following conditions:
+!
+! The above copyright notice and this permission notice shall be included
+! in all copies or substantial portions of the Software.
+!
+! THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+! IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+! TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+! PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
+! OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+! EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+! PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+! PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+! LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+! NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+!
+!--------------------------------------------------------------------
+!
+!     Constants for TenTusscher-Panfilov Ventricular Myocyte Model.
+!
+!--------------------------------------------------------------------
+
 !     Default model parameters
 !     R: Gas constant
       REAL(KIND=8) :: Rc = 8314.472D0       ! units: J/mol/K
@@ -79,11 +113,11 @@
 !     k2p: O to I and R to RI, I_rel transition rate
       REAL(KIND=8) :: k2p = 0.045D0        ! units: mM^{-1}/ms
 !     k3: O to R and I to RI, I_rel transition rate
-      REAL(KIND=8) :: k3  = 0.06D0         ! units: ms^{-1}
+      REAL(KIND=8) :: k3 = 0.06D0         ! units: ms^{-1}
 !     k4: I to O and Ri to I, I_rel transition rate
-      REAL(KIND=8) :: k4  = 5.0D-3         ! units: ms^{-1}
+      REAL(KIND=8) :: k4 = 5.0D-3         ! units: ms^{-1}
 !     EC: Ca_sr half-saturation constant of k_casr
-      REAL(KIND=8) :: EC  = 1.5D0          ! units: mM
+      REAL(KIND=8) :: EC = 1.5D0          ! units: mM
 !     max_sr: Maximum value of k_casr
       REAL(KIND=8) :: max_sr = 2.5D0       ! dimensionless
 !     min_sr: Minimum value of k_casr
@@ -104,8 +138,10 @@
       REAL(KIND=8) :: Buf_ss = 0.4D0       ! units: mM
 !     K_bufss: Ca_ss half-saturation constant for subspace buffer
       REAL(KIND=8) :: K_bufss = 2.5D-4     ! units: mM
+!     Resting potential
+      REAL(KIND=8) :: Vrest = -85.23D0    ! units: mV
 !-----------------------------------------------------------------------
-!     Activation coupling parameters
+!     Electromechanics coupling parameters: active stress model
 !     Ca_rest: Resting Ca concentration
       REAL(KIND=8) :: Ca_rest = 5.0D-5     ! units: mM
 !     Ca_crit: Critical Ca concentration
@@ -119,6 +155,31 @@
 !     Transition rate
       REAL(KIND=8) :: xi_T = 4.0D3         ! units: mM^{-1}
 !-----------------------------------------------------------------------
+!     Electromechanics coupling parameters: active strain model
+!     Active force of sacromere (-mM^{-2})
+      REAL(KIND=8) :: alFa = -4.0D6
+!     Resting Ca concentration (mM)
+      REAL(KIND=8) :: c_Ca0 = 2.155D-4
+!     Viscous-type constant (ms-mM^{-2})
+      REAL(KIND=8) :: mu_Ca = 5.0D6
+
+!     Force-length relationship parameters
+!     Initial length of sacromeres (um)
+      REAL(KIND=8) :: SL0 = 1.95D0
+!     Min. length of sacromeres (um)
+      REAL(KIND=8) :: SLmin = 1.7D0
+!     Max. length of sacromeres (um)
+      REAL(KIND=8) :: SLmax = 2.6D0
+!     Fourier coefficients
+      REAL(KIND=8) :: f0  = -4333.618335582119D0
+      REAL(KIND=8) :: fc1 =  2570.395355352195D0
+      REAL(KIND=8) :: fs1 = -2051.827278991976D0
+      REAL(KIND=8) :: fc2 =  1329.53611689133D0
+      REAL(KIND=8) :: fs2 =  302.216784558222D0
+      REAL(KIND=8) :: fc3 =  104.943770305116D0
+      REAL(KIND=8) :: fs3 =  218.375174229422D0
+
+!-----------------------------------------------------------------------
 !     Scaling factors
 !     Voltage scaling
       REAL(KIND=8) :: Vscale  = 1.0D0
@@ -128,8 +189,6 @@
       REAL(KIND=8) :: Voffset = 0.0D0
 !-----------------------------------------------------------------------
 !     Variables
-!     D: Diffusivity, D = 1 / (rho * S * Cm)
-      REAL(KIND=8) :: Diff
 !     Reverse potentials for Na, K, Ca
       REAL(KIND=8) :: E_Na
       REAL(KIND=8) :: E_K
@@ -169,26 +228,30 @@
 !     I_xfer: diffusive Ca current
       REAL(KIND=8) :: I_xfer
 !-----------------------------------------------------------------------
-!     Other auxillary variables
+!     State variables
       REAL(KIND=8) :: V
       REAL(KIND=8) :: K_i
       REAL(KIND=8) :: Na_i
       REAL(KIND=8) :: Ca_i
+      REAL(KIND=8) :: Ca_ss
+      REAL(KIND=8) :: Ca_sr
+      REAL(KIND=8) :: R_bar
+
+!     Gating variables (runtime, steady state)
       REAL(KIND=8) :: xr1, xr1i
       REAL(KIND=8) :: xr2, xr2i
       REAL(KIND=8) :: xs, xsi
       REAL(KIND=8) :: m, mi
       REAL(KIND=8) :: h, hi
       REAL(KIND=8) :: j, ji
-      REAL(KIND=8) :: Ca_ss
       REAL(KIND=8) :: d, di
       REAL(KIND=8) :: f, fi
       REAL(KIND=8) :: f2, f2i
       REAL(KIND=8) :: fcass, fcassi
       REAL(KIND=8) :: s, si
       REAL(KIND=8) :: r, ri
-      REAL(KIND=8) :: Ca_sr
-      REAL(KIND=8) :: R_bar
+
+!     Other variables
       REAL(KIND=8) :: k1
       REAL(KIND=8) :: k2
       REAL(KIND=8) :: k_casr
@@ -196,13 +259,12 @@
 
 !     Jacobian variables
       REAL(KIND=8) :: E_Na_Nai, E_K_Ki, E_Ca_Cai, E_Ks_Ki, E_Ks_Nai
-      REAL(KINd=8) :: I_Na_V, I_Na_Nai, I_Na_m, I_Na_h, I_Na_j
-      REAL(KIND=8) :: I_to_V, I_to_Ki, I_to_s, I_to_r
+      REAL(KINd=8) :: I_Na_V, I_Na_Nai
+      REAL(KIND=8) :: I_to_V, I_to_Ki
       REAL(KIND=8) :: I_K1_V, I_K1_Ki
-      REAL(KIND=8) :: I_Kr_V, I_Kr_Ki, I_Kr_xr1, I_Kr_xr2
-      REAL(KIND=8) :: I_Ks_V, I_Ks_Ki, I_Ks_Nai, I_Ks_xs
-      REAL(KIND=8) :: I_CaL_V, I_CaL_Cass, I_CaL_d, I_CaL_f, I_CaL_f2,
-     2   I_CaL_fcass
+      REAL(KIND=8) :: I_Kr_V, I_Kr_Ki
+      REAL(KIND=8) :: I_Ks_V, I_Ks_Ki, I_Ks_Nai
+      REAL(KIND=8) :: I_CaL_V, I_CaL_Cass
       REAL(KIND=8) :: I_NaCa_V, I_NaCa_Nai, I_NaCa_Cai
       REAL(KIND=8) :: I_NaK_V, I_NaK_Nai
       REAL(KIND=8) :: I_pCa_Cai

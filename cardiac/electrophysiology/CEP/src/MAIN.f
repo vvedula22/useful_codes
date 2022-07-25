@@ -1,16 +1,47 @@
-!#######################################################################
-      PROGRAM CEPINTEG
+!
+! Copyright (c) Stanford University, The Regents of the University of
+!               California, and others.
+!
+! All Rights Reserved.
+!
+! See Copyright-SimVascular.txt for additional details.
+!
+! Permission is hereby granted, free of charge, to any person obtaining
+! a copy of this software and associated documentation files (the
+! "Software"), to deal in the Software without restriction, including
+! without limitation the rights to use, copy, modify, merge, publish,
+! distribute, sublicense, and/or sell copies of the Software, and to
+! permit persons to whom the Software is furnished to do so, subject
+! to the following conditions:
+!
+! The above copyright notice and this permission notice shall be included
+! in all copies or substantial portions of the Software.
+!
+! THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+! IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+! TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+! PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
+! OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+! EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+! PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+! PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+! LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+! NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+!
+!--------------------------------------------------------------------
+!
+!
+!--------------------------------------------------------------------
+
+      PROGRAM CEPMAIN
       USE CEPMOD
       IMPLICIT NONE
 
-      LOGICAL :: flag = .FALSE.
-      INTEGER fid, i, j, k, ic, nWTF
-      INTEGER c1, c2, cmax, crate
-      REAL(KIND=8) cTS, Ts, Te, wtime, Istim, epsX
+      LOGICAL flag
+      INTEGER i, c1, c2, cmax, crate
+      REAL(KIND=8) t1, t2, wtime
       CHARACTER(LEN=stdL) fName
-
-      INTEGER, ALLOCATABLE :: IPAR(:)
-      REAL(KIND=8), ALLOCATABLE :: WTF(:), RPAR(:)
 
       i = IARGC()
       IF (i .EQ. 0) THEN
@@ -20,301 +51,37 @@
       END IF
       CALL GETARG(1, fName)
 
+      INQUIRE(FILE=TRIM(fName), EXIST=flag)
+      IF (.NOT.flag) THEN
+         WRITE(*,'(A)') "ERROR: Input file <"//TRIM(fName)//
+     2   "> does not exist"
+         STOP
+      END IF
+
       CALL READINPUTS(fName)
 
-      nWTF = nX
-      IF (cepType .EQ. cepType_TTP) THEN
-         nWTF = nWTF + 16
-         ALLOCATE(RPAR(18))
-      ELSE IF (cepType .EQ. cepType_BO) THEN
-         nWTF = nWTF + 3
-         ALLOCATE(RPAR(5))
-      ELSE
-         ALLOCATE(RPAR(2))
-      END IF
-      RPAR(:) = 0D0
+c      CALL SYSTEM_CLOCK(count_max=cmax)
+c      CALL SYSTEM_CLOCK(count_rate=crate)
+c      CALL SYSTEM_CLOCK(c1)
+      CALL CPU_TIME(t1)
 
-      IF (emCpl) nWTF = nWTF + 2
-      ALLOCATE(WTF(nWTF))
-      WTF(:) = 0D0
+      CALL CEPINIT()
 
-      IF (tIntType .EQ. tIntType_CN2) THEN
-         ALLOCATE(IPAR(2))
-         flag    = .TRUE.
-         IPAR(1) = MAXITR
-         IPAR(2) = 0
+      CALL CEPINTEG()
 
-         RPAR(1) = ATOL
-         RPAR(2) = RTOL
-      END IF
+      DEALLOCATE(X, Xg)
 
-      cTS  = 0D0
-      j    = 1
-      k    = 1
-      CALL SYSTEM_CLOCK(count_max=cmax)
-      CALL SYSTEM_CLOCK(count_rate=crate)
-      CALL SYSTEM_CLOCK(c1)
+c      CALL SYSTEM_CLOCK(c2)
+c      wtime = REAL(c2-c1,KIND=8)/REAL(crate,KIND=8)
+      CALL CPU_TIME(t2)
+      wtime = t2 - t1
 
-      SELECT CASE (cepType)
-      CASE (cepType_AP)
-!        Clear log file
-         WRITE(fName,'(A)') "log_AP.txt"
-         CALL CTXT(fName)
-
-!        Initialize state variables
-         WRITE(*,'(4X,A)') "Initializing Aliev-Panfilov model"
-         CALL AP_INIT(nX, X)
-
-!        Loop over time
-         WRITE(*,'(4X,A)',ADVANCE='NO') "Time integration progress: "
-         DO i=1, nTS
-!           Apply external stimulus
-            ic = FLOOR(cTS/BCL)
-            Ts = Tstim_start + REAL(ic,KIND=8)*BCL
-            Te = Ts + Tstim_dur
-            IF (cTS.GE.Ts-eps .AND. cTS.LE.Te+eps) THEN
-               X(1) = X(1) + stim_amp
-            END IF
-
-!           Time integration
-            SELECT CASE (tIntType)
-            CASE (tIntType_FE)
-               CALL AP_INTEGFE(nX, X, cTS, dt)
-
-            CASE (tIntType_RK4)
-               CALL AP_INTEGRK(nX, X, cTS, dt)
-
-            CASE (tIntType_CN2)
-               CALL AP_INTEGCN2(nX, X, cTS, dt, IPAR, RPAR)
-            END SELECT
-            WTF(1:nX) = X(:)
-
-!           Perform NaN check
-            IF (ISNAN(X(1))) STOP "NaN occurence (X). Aborted!"
-
-!           Activation Coupling
-            IF (emCpl) THEN
-               CALL AP_ACTCPL(nX, X, dt, epsX, Tact)
-               IF (ISNAN(Tact)) STOP "NaN occurence (Tact). Aborted!"
-               WTF(nWTF-1) = epsX
-               WTF(nWTF)   = Tact
-            END IF
-
-!           Time step advance
-            cTS = cTS + dt
-
-!           Write state variables to a log file
-            CALL WTXT(fName, nWTF, WTF, cTS)
-
-!           Display progress
-            IF (i .EQ. j) THEN
-               WRITE(*,'(A)',ADVANCE='NO') (k-1)*20//"%  "
-               k = k + 1
-               j = NINT(REAL((k-1)*nTS,KIND=8)/5.0D0)
-            END IF
-         END DO
-
-      CASE (cepType_FN)
-!        Clear log file
-         WRITE(fName,'(A)') "log_FN.txt"
-         CALL CTXT(fName)
-
-!        Initialize state variables
-         WRITE(*,'(4X,A)') "Initializing Fitzhugh-Nagumo model"
-         CALL FN_INIT(nX, X)
-
-!        Loop over time
-         WRITE(*,'(4X,A)',ADVANCE='NO') "Time integration progress: "
-         DO i=1, nTS
-!           Apply external stimulus
-            ic = FLOOR(cTS/BCL)
-            Ts = Tstim_start + REAL(ic,KIND=8)*BCL
-            Te = Ts + Tstim_dur
-            IF (cTS.GE.Ts-eps .AND. cTS.LE.Te+eps) THEN
-               X(1) = X(1) + stim_amp
-            END IF
-
-!           Time integration
-            SELECT CASE (tIntType)
-            CASE (tIntType_FE)
-               CALL FN_INTEGFE(nX, X, cTS, dt)
-
-            CASE (tIntType_RK4)
-               CALL FN_INTEGRK(nX, X, cTS, dt)
-
-            CASE (tIntType_CN2)
-               CALL FN_INTEGCN2(nX, X, cTS, dt, IPAR, RPAR)
-            END SELECT
-            WTF(1:nX) = X(:)
-
-!           Perform NaN check
-            IF (ISNAN(X(1))) STOP "NaN occurence. Aborted!"
-
-!           Time step advance
-            cTS = cTS + dt
-
-!           Write state variables to a log file
-            CALL WTXT(fName, nWTF, WTF, cTS)
-
-!           Display progress
-            IF (i .EQ. j) THEN
-               WRITE(*,'(A)',ADVANCE='NO') (k-1)*20//"%  "
-               k = k + 1
-               j = NINT(REAL((k-1)*nTS,KIND=8)/5.0D0)
-            END IF
-         END DO
-
-      CASE (cepType_TTP)
-!        Clear log file
-         IF (mzone .EQ. 1) THEN
-            WRITE(fName,'(A)') "log_TTP_epi.txt"
-         ELSE IF (mzone .EQ. 2) THEN
-            WRITE(fName,'(A)') "log_TTP_endo.txt"
-         ELSE IF (mzone .EQ. 3) THEN
-            WRITE(fName,'(A)') "log_TTP_myo.txt"
-         END IF
-         CALL CTXT(fName)
-
-!        Initialize state variables
-         WRITE(*,'(4X,A)') "Initializing tenTusscher-Panfilov model"
-         CALL TTP_INIT(mzone, nX, X)
-
-!        Loop over time
-         WRITE(*,'(4X,A)',ADVANCE='NO') "Time integration progress: "
-         DO i=1, nTS
-!           Apply external stimulus
-            ic = FLOOR(cTS/BCL)
-            Ts = Tstim_start + REAL(ic,KIND=8)*BCL
-            Te = Ts + Tstim_dur
-            IF (cTS.GE.Ts-eps .AND. cTS.LE.Te+eps) THEN
-               Istim = -stim_amp
-            ELSE
-               Istim = 0.0D0
-            END IF
-
-!           Time integration
-            SELECT CASE (tIntType)
-            CASE (tIntType_FE)
-               CALL TTP_INTEGFE(mzone, nX, X, cTS, dt, Istim, RPAR)
-
-            CASE (tIntType_RK4)
-               CALL TTP_INTEGRK(mzone, nX, X, cTS, dt, Istim, RPAR)
-
-            CASE (tIntType_CN2)
-               CALL TTP_INTEGCN2(mzone, nX, X, cTS, dt, Istim, IPAR,
-     2            RPAR)
-
-            END SELECT
-            WTF(1:nX) = X(:)
-            WTF(nX+1:nX+16) = RPAR(3:18)
-
-!           Perform NaN check
-            IF (ISNAN(X(1))) STOP "NaN occurence (X). Aborted!"
-
-!           Activation Coupling
-            IF (emCpl) THEN
-               CALL TTP_ACTCPL(nX, X, dt, epsX, Tact)
-               IF (ISNAN(Tact)) STOP "NaN occurence (Tact). Aborted!"
-               WTF(nWTF-1) = epsX
-               WTF(nWTF)   = Tact
-            END IF
-
-!           Time step advance
-            cTS = cTS + dt
-
-!           Write state variables to a log file
-            CALL WTXT(fName, nWTF, WTF, cTS)
-
-!           Display progress
-            IF (i .EQ. j) THEN
-               WRITE(*,'(A)',ADVANCE='NO') (k-1)*20//"%  "
-               k = k + 1
-               j = NINT(REAL((k-1)*nTS,KIND=8)/5.0D0)
-            END IF
-         END DO
-
-      CASE (cepType_BO)
-!        Clear log file
-         IF (mzone .EQ. 1) THEN
-            WRITE(fName,'(A)') "log_BO_epi.txt"
-         ELSE IF (mzone .EQ. 2) THEN
-            WRITE(fName,'(A)') "log_BO_endo.txt"
-         ELSE IF (mzone .EQ. 3) THEN
-            WRITE(fName,'(A)') "log_BO_myo.txt"
-         END IF
-         CALL CTXT(fName)
-
-!        Initialize state variables
-         WRITE(*,'(4X,A)') "Initializing Bueno-Orovio model"
-         CALL BO_INIT(nX, X)
-
-!        Loop over time
-         WRITE(*,'(4X,A)',ADVANCE='NO') "Time integration progress: "
-         DO i=1, nTS
-!           Apply external stimulus
-            ic = FLOOR(cTS/BCL)
-            Ts = Tstim_start + REAL(ic,KIND=8)*BCL
-            Te = Ts + Tstim_dur
-            IF (cTS.GE.Ts-eps .AND. cTS.LE.Te+eps) THEN
-               Istim = -stim_amp
-            ELSE
-               Istim = 0.0D0
-            END IF
-
-!           Time integration
-            SELECT CASE (tIntType)
-            CASE (tIntType_FE)
-               CALL BO_INTEGFE(mzone, nX, X, cTS, dt, Istim, RPAR)
-
-            CASE (tIntType_RK4)
-               CALL BO_INTEGRK(mzone, nX, X, cTS, dt, Istim, RPAR)
-
-            CASE (tIntType_CN2)
-               CALL BO_INTEGCN2(mzone, nX, X, cTS, dt, Istim, IPAR,RPAR)
-            END SELECT
-            WTF(1:nX) = X(:)
-            WTF(nX+1:nX+3) = RPAR(3:5)
-
-!           Perform NaN check
-            IF (ISNAN(X(1))) STOP "NaN occurence (X). Aborted!"
-
-!           Activation Coupling
-            IF (emCpl) THEN
-               CALL BO_ACTCPL(nX, X, dt, epsX, Tact)
-               IF (ISNAN(Tact)) STOP "NaN occurence (Tact). Aborted!"
-               WTF(nWTF-1) = epsX
-               WTF(nWTF)   = Tact
-            END IF
-
-!           Time step advance
-            cTS = cTS + dt
-
-!           Write state variables to a log file
-            CALL WTXT(fName, nWTF, WTF, cTS)
-
-!           Display progress
-            IF (i .EQ. j) THEN
-               WRITE(*,'(A)',ADVANCE='NO') (k-1)*20//"%  "
-               k = k + 1
-               j = NINT(REAL((k-1)*nTS,KIND=8)/5.0D0)
-            END IF
-         END DO
-
-      END SELECT
+      WRITE(*,'(A)')
+      WRITE(*,'(4X,A,F8.2,A)') "Time elapsed: ", wtime, "s"
       WRITE(*,'(A)')
 
-      CALL SYSTEM_CLOCK(c2)
-      wtime = REAL(c2-c1,KIND=8)/REAL(crate,KIND=8)
-      WRITE(*,'(4X,A,F8.2,A)') "Time elapsed: ", wtime, "s"
-
-      IF (flag) THEN
-         WRITE(*,'(A)') "----------------------------------------------"
-         WRITE(*,'(A)') " No of Newton-Raphson fails: "//STR(ipar(2))
-         WRITE(*,'(A)') "----------------------------------------------"
-      END IF
-
       RETURN
-      END PROGRAM CEPINTEG
+      END PROGRAM CEPMAIN
 !#######################################################################
       SUBROUTINE READINPUTS(fName)
       USE CEPMOD
@@ -329,115 +96,116 @@
       OPEN(fid, FILE=TRIM(fName))
       READ(fid,*,END=101) ! CEP Model Type !
       READ(fid,*,END=101) sTmp
+      CALL TO_LOWER(sTmp)
       SELECT CASE (TRIM(sTmp))
-      CASE ("ap", "AP")
-         cepType = cepType_AP
+      CASE ("ap")
+         cep%cepType = cepModel_AP
          nX = 2
-      CASE ("fn", "FN")
-         cepType = cepType_FN
-         nX = 2
-      CASE ("ttp", "TTP")
-         cepType = cepType_TTP
-         nX = 19
-      CASE ("bo", "BO")
-         cepType = cepType_BO
+         nG = 0
+
+      CASE ("bo")
+         cep%cepType = cepModel_BO
          nX = 4
+
+      CASE ("fn")
+         cep%cepType = cepModel_FN
+         nX = 2
+         nG = 0
+
+      CASE ("ttp")
+         cep%cepType = cepModel_TTP
+         nX = 7
+         nG = 12
+
       CASE DEFAULT
          STOP "ERROR: Unknown electrophysiology model"
       END SELECT
 
-      READ(fid,*,END=101) ! Myocardium zone
-      READ(fid,*,END=101) mzone
+      READ(fid,*,END=101) ! Myocardium zone: 1-epi; 2-endo; 3-myo
+      READ(fid,*,END=101) cep%imyo
 
       READ(fid,*,END=101) ! Time integrator !
       READ(fid,*,END=101) sTmp
+      CALL TO_LOWER(sTmp)
       SELECT CASE (TRIM(sTmp))
-      CASE ("fe", "FE", "Euler")
-         tIntType = tIntType_FE
-      CASE ("rk4", "RK4", "Runge")
-         tIntType = tIntType_RK4
-      CASE ("cn", "cn2", "CN", "CN2")
-         tIntType = tIntType_CN2
+      CASE ("fe", "euler")
+         cep%odeS%tIntType = tIntType_FE
+
+      CASE ("rk", "rk4", "runge")
+         cep%odeS%tIntType = tIntType_RK4
+
+      CASE ("cn", "cn2")
+         cep%odeS%tIntType = tIntType_CN2
+
       CASE DEFAULT
          STOP "ERROR: Unknown time integration scheme"
       END SELECT
 
-      READ(fid,*,END=101) ! Basic cycle length !
-      READ(fid,*,END=101) BCL
+!     General time integration parameters
       READ(fid,*,END=101) ! No. of time steps !
       READ(fid,*,END=101) nTS
       READ(fid,*,END=101) ! time increment !
       READ(fid,*,END=101) dt
-      READ(fid,*,END=101) ! External stimulus start time !
-      READ(fid,*,END=101) Tstim_start
-      READ(fid,*,END=101) ! External stimulus duration !
-      READ(fid,*,END=101) Tstim_dur
+!     Stimulus parameters
       READ(fid,*,END=101) ! External stimulus amplitude!
-      READ(fid,*,END=101) stim_amp
+      READ(fid,*,END=101) cep%Istim%A
+      READ(fid,*,END=101) ! External stimulus start time !
+      READ(fid,*,END=101) cep%Istim%Ts
+      READ(fid,*,END=101) ! External stimulus duration !
+      READ(fid,*,END=101) cep%Istim%Td
+      READ(fid,*,END=101) ! Basic cycle length !
+      READ(fid,*,END=101) cep%Istim%CL
+      cep%Istim%Te = cep%Istim%Ts + cep%Istim%Td
+
       READ(fid,*,END=101) ! Electro-Mechanics coupling !
       READ(fid,*,END=101) itmp
-      IF (itmp .NE. 0) emCpl = .TRUE.
+      IF (itmp .NE. 0) cep%emCpld = .TRUE.
+
+      READ(fid,*,END=101) ! Display progress !
+      READ(fid,*,END=101) itmp
+      IF (itmp .NE. 0) iProg = .TRUE.
+
+#ifdef S1S2REST
+      IF (cep%cepType .NE. cepModel_TTP)
+     2   STOP "ERROR: S1S2 protocol applicable for TTP model only"
+!     Read S1-S2 protocol inputs
+      READ(fid,*,END=101) ! S1-S2 inputs
+      READ(fid,*,END=101) ! S1 repeats before S2 stimulus
+      READ(fid,*,END=101) cep%S1S2%nrep
+      READ(fid,*,END=101) ! Initial Diastolic interval
+      READ(fid,*,END=101) cep%S1S2%DI
+      READ(fid,*,END=101) ! Basic APD
+      READ(fid,*,END=101) cep%S1S2%APD
+      READ(fid,*,END=101) ! S2 amplitude
+      READ(fid,*,END=101) cep%S1S2%Istim_A
+      iProg = .FALSE.
+#endif
+
  101  CLOSE(fid)
 
-      IF (emCpl .AND. cepType .EQ. cepType_FN) THEN
+      IF (cep%emCpld .AND. cep%cepType .EQ. cepModel_FN) THEN
          STOP "ERROR: EM coupling is not allowed for Fitzhugh-Nagumo"//
      2      " model"
       END IF
 
-      IF (mzone.LT.1 .OR. mzone.GT.3) THEN
+      IF (cep%imyo.LT.1 .OR. cep%imyo.GT.3) THEN
          STOP "ERROR: invalid myocardial zone specified"
       END IF
 
-      IF (mzone .GT. 1) THEN
-         IF (cepType.NE.cepType_TTP .AND. cepType.NE.cepType_BO) THEN
+      IF (cep%imyo .GT. 1) THEN
+         IF (cep%cepType.NE.cepModel_TTP .AND.
+     2       cep%cepType.NE.cepModel_BO) THEN
             STOP "ERROR: mid-myocardium and endocardium zones are "//
      2         " allowed for tenTuscher-Panfilov and Bueno-Orovio "//
      3         " models only"
          END IF
       END IF
 
-      ALLOCATE(X(nX))
-      X = 0.0D0
+      ALLOCATE(X(nX), Xg(nG))
+      X  = 00D0
+      Xg = 00D0
 
       RETURN
       END SUBROUTINE READINPUTS
-!#######################################################################
-      SUBROUTINE CTXT(fName)
-      USE CEPMOD, ONLY : stdL
-      IMPLICIT NONE
-      CHARACTER(LEN=stdL), INTENT(IN) :: fName
-
-      INTEGER fid
-
-      fid = 1011
-      OPEN(fid, FILE=TRIM(fname), STATUS='UNKNOWN')
-      CLOSE(fid,STATUS='DELETE')
-
-      OPEN(fid, FILE=TRIM(fname), STATUS='NEW')
-      CLOSE(fid)
-
-      RETURN
-      END SUBROUTINE CTXT
-!-----------------------------------------------------------------------
-      SUBROUTINE WTXT(fname, n, X, t)
-      USE CEPMOD, ONLY : stdL
-      IMPLICIT NONE
-      INTEGER, INTENT(IN) :: n
-      REAL(KIND=8), INTENT(IN) :: t, X(n)
-      CHARACTER(LEN=stdL), INTENT(IN) :: fName
-
-      INTEGER i, fid
-
-      fid = 1011
-      OPEN(fid, FILE=TRIM(fName), STATUS='OLD', POSITION='APPEND')
-      WRITE(fid,'(2X,F10.4)',ADVANCE='NO') t
-      DO i=1, n
-         WRITE(fid,'(1X,1pE18.9)',ADVANCE='NO') X(i)
-      END DO
-      WRITE(fid,'(A)')
-      CLOSE(fid)
-
-      RETURN
-      END SUBROUTINE WTXT
 !#######################################################################
 
