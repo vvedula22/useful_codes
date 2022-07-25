@@ -1,34 +1,3 @@
-!
-! Copyright (c) Stanford University, The Regents of the University of
-!               California, and others.
-!
-! All Rights Reserved.
-!
-! See Copyright-SimVascular.txt for additional details.
-!
-! Permission is hereby granted, free of charge, to any person obtaining
-! a copy of this software and associated documentation files (the
-! "Software"), to deal in the Software without restriction, including
-! without limitation the rights to use, copy, modify, merge, publish,
-! distribute, sublicense, and/or sell copies of the Software, and to
-! permit persons to whom the Software is furnished to do so, subject
-! to the following conditions:
-!
-! The above copyright notice and this permission notice shall be included
-! in all copies or substantial portions of the Software.
-!
-! THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
-! IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
-! TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-! PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
-! OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-! EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-! PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-! PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-! LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-! NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-!
 !-----------------------------------------------------------------------
 !
 !     This module defines data structures for Bueno-Orovio cellular
@@ -37,37 +6,129 @@
 !-----------------------------------------------------------------------
 
       MODULE BOMOD
+      USE TYPEMOD
+      USE UTILMOD, ONLY : stdL
       IMPLICIT NONE
 
-      PRIVATE :: ISZERO, STEP, DELTA
+      PRIVATE
+
+      REAL(KIND=RKIND), PARAMETER :: eps = EPSILON(eps)
+
+      INCLUDE "PARAMS_BO.f"
+
+      PUBLIC :: BO_INIT
+      PUBLIC :: BO_READPARFF
+      PUBLIC :: BO_INTEGFE
+      PUBLIC :: BO_INTEGRK
+      PUBLIC :: BO_INTEGCN2
+      PUBLIC :: BO_ACTVSTRS_FE
+      PUBLIC :: BO_ACTVSTRS_RK
+      PUBLIC :: BO_ACTVSTRS_BE
+      PUBLIC :: BO_ACTVSTRN_FE
+      PUBLIC :: BO_ACTVSTRN_RK
+      PUBLIC :: BO_ACTVSTRN_BE
 
       CONTAINS
 !-----------------------------------------------------------------------
       SUBROUTINE BO_INIT(nX, X)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: nX
-      REAL(KIND=8), INTENT(INOUT) :: X(nX)
-
-      INCLUDE "PARAMS_BO.f"
+      REAL(KIND=RKIND), INTENT(INOUT) :: X(nX)
 
       X(1) = Voffset
-      X(2) = 1.0D0
-      X(3) = 1.0D0
-      X(4) = 0.0D0
+      X(2) = 1.0_RKIND
+      X(3) = 1.0_RKIND
+      X(4) = 1.E-5_RKIND
 
       RETURN
       END SUBROUTINE BO_INIT
+!-----------------------------------------------------------------------
+      SUBROUTINE BO_READPARFF(fname)
+      IMPLICIT NONE
+      CHARACTER(LEN=*), INTENT(IN) :: fname
+
+      INTEGER fid
+
+      fid = 1528
+
+      OPEN(fid, FILE=TRIM(fname))
+
+!     Scaling factors
+      CALL GETRVAL(fid, "Vscale", Vscale)
+      CALL GETRVAL(fid, "Tscale", Tscale)
+      CALL GETRVAL(fid, "Voffset", Voffset)
+
+!     Cellular activation model parameters
+      CALL GETRVEC(fid, "u_o", 3, u_o)
+      CALL GETRVEC(fid, "u_u", 3, u_u)
+      CALL GETRVEC(fid, "theta_v", 3, theta_v)
+      CALL GETRVEC(fid, "theta_w", 3, theta_w)
+      CALL GETRVEC(fid, "thetam_v", 3, thetam_v)
+      CALL GETRVEC(fid, "theta_o", 3, theta_o)
+      CALL GETRVEC(fid, "taum_v1", 3, taum_v1)
+      CALL GETRVEC(fid, "taum_v2", 3, taum_v2)
+      CALL GETRVEC(fid, "taup_v", 3, taup_v)
+      CALL GETRVEC(fid, "taum_w1", 3, taum_w1)
+      CALL GETRVEC(fid, "taum_w2", 3, taum_w2)
+      CALL GETRVEC(fid, "km_w", 3, km_w)
+      CALL GETRVEC(fid, "um_w", 3, um_w)
+      CALL GETRVEC(fid, "taup_w", 3, taup_w)
+      CALL GETRVEC(fid, "tau_fi", 3, tau_fi)
+      CALL GETRVEC(fid, "tau_o1", 3, tau_o1)
+      CALL GETRVEC(fid, "tau_o2", 3, tau_o2)
+      CALL GETRVEC(fid, "tau_so1", 3, tau_so1)
+      CALL GETRVEC(fid, "tau_so2", 3, tau_so2)
+      CALL GETRVEC(fid, "k_so", 3, k_so)
+      CALL GETRVEC(fid, "u_so", 3, u_so)
+      CALL GETRVEC(fid, "tau_s1", 3, tau_s1)
+      CALL GETRVEC(fid, "tau_s2", 3, tau_s2)
+      CALL GETRVEC(fid, "k_s", 3, k_s)
+      CALL GETRVEC(fid, "u_s", 3, u_s)
+      CALL GETRVEC(fid, "tau_si", 3, tau_si)
+      CALL GETRVEC(fid, "tau_winf", 3, tau_winf)
+      CALL GETRVEC(fid, "ws_inf", 3, ws_inf)
+
+!     Electromechanics coupling parameters: active stress model
+      CALL GETRVAL(fid, "Vrest", Vrest)
+      CALL GETRVAL(fid, "Vcrit", Vcrit)
+      CALL GETRVAL(fid, "K_T", K_T)
+      CALL GETRVAL(fid, "eps_0", eps_0)
+      CALL GETRVAL(fid, "eps_i", eps_i)
+      CALL GETRVAL(fid, "xi_T", xi_T)
+
+!     Electromechanics coupling parameters: active strain model
+      CALL GETRVAL(fid, "alfa", alfa)
+      CALL GETRVAL(fid, "c_0", c_0)
+      CALL GETRVAL(fid, "mu_c", mu_C)
+      CALL GETRVAL(fid, "SL0", SL0)
+      CALL GETRVAL(fid, "SLmin", SLmin)
+      CALL GETRVAL(fid, "SLmax", SLmax)
+      CALL GETRVAL(fid, "f0", f0)
+      CALL GETRVAL(fid, "fc1", fc1)
+      CALL GETRVAL(fid, "fs1", fs1)
+      CALL GETRVAL(fid, "fc2", fc2)
+      CALL GETRVAL(fid, "fs2", fs2)
+      CALL GETRVAL(fid, "fc3", fc3)
+      CALL GETRVAL(fid, "fs3", fs3)
+
+!     Electrophysiology model parameters
+      CALL GETRVAL(fid, "Cm", Cm)
+      CALL GETRVAL(fid, "sV", sV)
+      CALL GETRVAL(fid, "rho", rho)
+
+      CLOSE(fid)
+
+      RETURN
+      END SUBROUTINE BO_READPARFF
 !-----------------------------------------------------------------------
 !     Time integration performed using Forward Euler method
       SUBROUTINE BO_INTEGFE(imyo, nX, X, Ts, Ti, Istim, Ksac, RPAR)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: imyo, nX
-      REAL(KIND=8), INTENT(IN) :: Ts, Ti, Istim, Ksac
-      REAL(KIND=8), INTENT(INOUT) :: X(nX), RPAR(5)
+      REAL(KIND=RKIND), INTENT(IN) :: Ts, Ti, Istim, Ksac
+      REAL(KIND=RKIND), INTENT(INOUT) :: X(nX), RPAR(5)
 
-      INCLUDE "PARAMS_BO.f"
-
-      REAL(KIND=8) :: t, dt, f(nX), fext, Isac
+      REAL(KIND=RKIND) :: t, dt, f(nX), fext, Isac
 
       t    = Ts / Tscale
       dt   = Ti / Tscale
@@ -89,12 +150,10 @@
       SUBROUTINE BO_INTEGRK(imyo, nX, X, Ts, Ti, Istim, Ksac, RPAR)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: imyo, nX
-      REAL(KIND=8), INTENT(IN) :: Ts, Ti, Istim, Ksac
-      REAL(KIND=8), INTENT(INOUT) :: X(nX), RPAR(5)
+      REAL(KIND=RKIND), INTENT(IN) :: Ts, Ti, Istim, Ksac
+      REAL(KIND=RKIND), INTENT(INOUT) :: X(nX), RPAR(5)
 
-      INCLUDE "PARAMS_BO.f"
-
-      REAL(KIND=8) :: t, dt, dt6, fext, Isac, Xrk(nX), frk(nX,4)
+      REAL(KIND=RKIND) :: t, dt, dt6, fext, Isac, Xrk(nX), frk(nX,4)
 
       t    = Ts / Tscale
       dt   = Ti / Tscale
@@ -134,17 +193,13 @@
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: imyo, nX
       INTEGER, INTENT(INOUT) :: IPAR(2)
-      REAL(KIND=8), INTENT(IN) :: Ts, Ti, Istim, Ksac
-      REAL(KIND=8), INTENT(INOUT) :: Xn(nX), RPAR(5)
-
-      INCLUDE "PARAMS_BO.f"
-
-      REAL(KIND=8), PARAMETER :: eps = EPSILON(eps)
+      REAL(KIND=RKIND), INTENT(IN) :: Ts, Ti, Istim, Ksac
+      REAL(KIND=RKIND), INTENT(INOUT) :: Xn(nX), RPAR(5)
 
       INTEGER :: i, k, itMax
       LOGICAL :: l1, l2, l3
-      REAL(KIND=8) :: t, dt, fext, atol, rtol, Xk(nX), fn(nX), fk(nX),
-     2   rK(nX), Im(nX,nX), JAC(nX,nX), rmsA, rmsR, Isac
+      REAL(KIND=RKIND) :: t, dt, fext, atol, rtol, Xk(nX), fn(nX),
+     2   fk(nX), rK(nX), Im(nX,nX), JAC(nX,nX), rmsA, rmsR, Isac
 
       itMax = IPAR(1)
       atol  = RPAR(1)
@@ -203,13 +258,11 @@
       SUBROUTINE BO_GETF(i, n, X, f, fext, RPAR)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: i, n
-      REAL(KIND=8), INTENT(IN) :: X(n), fext
-      REAL(KIND=8), INTENT(OUT) :: f(n)
-      REAL(KIND=8), INTENT(INOUT) :: RPAR(5)
+      REAL(KIND=RKIND), INTENT(IN) :: X(n), fext
+      REAL(KIND=RKIND), INTENT(OUT) :: f(n)
+      REAL(KIND=RKIND), INTENT(INOUT) :: RPAR(5)
 
-      INCLUDE "PARAMS_BO.f"
-
-      REAL(KIND=8) :: u, v, w, s, H_uv, H_uw, H_umv, H_uo, taum_v,
+      REAL(KIND=RKIND) :: u, v, w, s, H_uv, H_uw, H_umv, H_uo, taum_v,
      2   taum_w, tau_so, tau_s, tau_o, v_inf, w_inf, I_fi, I_so, I_si
 
 !     Create local copies of the 4 state variables
@@ -258,13 +311,12 @@
       SUBROUTINE BO_GETJ(i, n, X, JAC)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: i, n
-      REAL(KIND=8), INTENT(IN) :: X(n)
-      REAL(KIND=8), INTENT(OUT) :: JAC(n,n)
+      REAL(KIND=RKIND), INTENT(IN) :: X(n)
+      REAL(KIND=RKIND), INTENT(OUT) :: JAC(n,n)
 
-      INCLUDE "PARAMS_BO.f"
-
-      REAL(KIND=8) :: u, v, w, s, H_uv, H_uw, H_umv, H_uo, D_uw, D_uv,
-     2   taum_v, taum_w, tau_so, tau_s, tau_o, v_inf, w_inf, n1, n2, n3
+      REAL(KIND=RKIND) :: u, v, w, s, H_uv, H_uw, H_umv, H_uo, D_uw,
+     2   D_uv, taum_v, taum_w, tau_so, tau_s, tau_o, v_inf, w_inf, n1,
+     3   n2, n3
 
 !     Create local variables
       u = X(1)
@@ -328,62 +380,244 @@
       END SUBROUTINE BO_GETJ
 !-----------------------------------------------------------------------
 !     Compute activation force for electromechanics based on active
-!     stress model
-      SUBROUTINE BO_ACTVSTRS(X, dt, Tact, epsX)
+!     stress model using forward Euler integration
+      SUBROUTINE BO_ACTVSTRS_FE(X, dt, Ta)
       IMPLICIT NONE
-      REAL(KIND=8), INTENT(IN) :: X, dt
-      REAL(KIND=8), INTENT(OUT) :: epsX
-      REAL(KIND=8), INTENT(INOUT) :: Tact
+      REAL(KIND=RKIND), INTENT(IN) :: X, dt
+      REAL(KIND=RKIND), INTENT(INOUT) :: Ta
 
-      INCLUDE "PARAMS_BO.f"
-
-      REAL(KIND=8) :: nr
+      REAL(KIND=RKIND) :: epsX, f
 
       epsX = EXP(-EXP(-xi_T*(X - Vcrit)))
       epsX = eps_0 + (eps_i - eps_0)*epsX
-      nr   = Tact + epsX*dt*eta_T*(X - Vrest)
-      Tact = nr / (1.0D0 + epsX*dt)
+
+      CALL BO_ASTRS_GETF(X, epsX, Ta, f)
+      Ta = Ta + (dt*f)
 
       RETURN
-      END SUBROUTINE BO_ACTVSTRS
+      END SUBROUTINE BO_ACTVSTRS_FE
+!-----------------------------------------------------------------------
+!     Compute activation force for electromechanics based on active
+!     stress model using RK4 integration
+      SUBROUTINE BO_ACTVSTRS_RK(X, dt, Ta)
+      IMPLICIT NONE
+      REAL(KIND=RKIND), INTENT(IN) :: X, dt
+      REAL(KIND=RKIND), INTENT(INOUT) :: Ta
+
+      REAL(KIND=RKIND) :: dt6, epsX, Ta_rk, f_rk(4)
+
+      dt6  = dt / 6._RKIND
+      epsX = EXP(-EXP(-xi_T*(X - Vcrit)))
+      epsX = eps_0 + (eps_i - eps_0)*epsX
+
+      Ta_rk = Ta
+      CALL BO_ASTRS_GETF(X, epsX, Ta_rk, f_rk(1))
+
+      Ta_rk = Ta + (0.5_RKIND*dt*f_rk(1))
+      CALL BO_ASTRS_GETF(X, epsX, Ta_rk, f_rk(2))
+
+      Ta_rk = Ta + (0.5_RKIND*dt*f_rk(2))
+      CALL BO_ASTRS_GETF(X, epsX, Ta_rk, f_rk(3))
+
+      Ta_rk = Ta + (dt*f_rk(3))
+      CALL BO_ASTRS_GETF(X, epsX, Ta_rk, f_rk(4))
+
+      Ta = Ta + dt6*(f_rk(1) + 2._RKIND*(f_rk(2) + f_rk(3)) + f_rk(4))
+
+      RETURN
+      END SUBROUTINE BO_ACTVSTRS_RK
+!-----------------------------------------------------------------------
+!     Compute activation force for electromechanics based on active
+!     stress model using backward Euler integration
+      SUBROUTINE BO_ACTVSTRS_BE(X, dt, Ta)
+      IMPLICIT NONE
+      REAL(KIND=RKIND), INTENT(IN) :: X, dt
+      REAL(KIND=RKIND), INTENT(INOUT) :: Ta
+
+      REAL(KIND=RKIND) :: epsX
+
+      epsX = EXP(-EXP(-xi_T*(X - Vcrit)))
+      epsX = eps_0 + (eps_i - eps_0)*epsX
+
+      Ta = (Ta + (dt*epsX*K_T*(X-Vrest))) / (1._RKIND + epsX*dt)
+
+      RETURN
+      END SUBROUTINE BO_ACTVSTRS_BE
+!-----------------------------------------------------------------------
+      SUBROUTINE BO_ASTRS_GETF(X, eX, Ta, f)
+      IMPLICIT NONE
+      REAL(KIND=RKIND), INTENT(IN) :: X, eX, Ta
+      REAL(KIND=RKIND), INTENT(OUT) :: f
+
+      f = eX*(K_T*(X-Vrest) - Ta)
+
+      RETURN
+      END SUBROUTINE BO_ASTRS_GETF
 !-----------------------------------------------------------------------
 !     Compute macroscopic fiber strain based on sacromere force-length
-!     relationship and slow inward current variable (s)
-      SUBROUTINE BO_ACTVSTRN(c, I4f, dt, gf)
+!     relationship and calcium concentration using forward Euler
+      SUBROUTINE BO_ACTVSTRN_FE(c_c, dt, gf)
       IMPLICIT NONE
-      REAL(KIND=8), INTENT(IN) :: c, I4f, dt
-      REAL(KIND=8), INTENT(INOUT) :: gf
+      REAL(KIND=RKIND), INTENT(IN) :: c_c, dt
+      REAL(KIND=RKIND), INTENT(INOUT) :: gf
 
-      INCLUDE "PARAMS_BO.f"
+      REAL(KIND=RKIND) :: f
 
-      REAL(KIND=8) :: SL, Fa, rtmp
-
-!     fiber length
-      SL = I4f * SL0
-
-!     Sacromere force-length relationship
-      IF (SL.GE.SLmin .AND. SL.LE.SLmax) THEN
-         SL = 0.5D0*f0 + fc1*COS(SL) + fs1*SIN(SL) +
-     2      fc2*COS(2.0D0*SL) + fs2*SIN(2.0D0*SL)  +
-     3      fc3*COS(3.0D0*SL) + fs3*SIN(3.0D0*SL)
-      ELSE
-         SL = 0.0D0
-      END IF
-
-!     Active force
-      Fa   = alFa * (c-c0)*(c-c0) * SL
-
-      rtmp = 2.0D0*I4f*(1.0D0/(1.0D0+gf)**3.0D0 - 1.0D0)
-      gf = gf + dt*(Fa + rtmp)/(mu_C * c * c)
+      CALL BO_ASTRN_GETF(c_c, gf, f)
+      gf = gf + (dt*f)
 
       RETURN
-      END SUBROUTINE BO_ACTVSTRN
+      END SUBROUTINE BO_ACTVSTRN_FE
+!-----------------------------------------------------------------------
+!     Compute macroscopic fiber strain based on sacromere force-length
+!     relationship and calcium concentration using Runge-Kutta
+      SUBROUTINE BO_ACTVSTRN_RK(c_c, dt, gf)
+      IMPLICIT NONE
+      REAL(KIND=RKIND), INTENT(IN) :: c_c, dt
+      REAL(KIND=RKIND), INTENT(INOUT) :: gf
+
+      REAL(KIND=RKIND) :: dt6, gf_rk, f_rk(4)
+
+      dt6  = dt / 6._RKIND
+
+      gf_rk = gf
+      CALL BO_ASTRN_GETF(c_c, gf_rk, f_rk(1))
+
+      gf_rk = gf + (0.5_RKIND*dt*f_rk(1))
+      CALL BO_ASTRN_GETF(c_c, gf_rk, f_rk(2))
+
+      gf_rk = gf + (0.5_RKIND*dt*f_rk(2))
+      CALL BO_ASTRN_GETF(c_c, gf_rk, f_rk(3))
+
+      gf_rk = gf + (dt*f_rk(3))
+      CALL BO_ASTRN_GETF(c_c, gf_rk, f_rk(4))
+
+      gf = gf + dt6*(f_rk(1) + 2._RKIND*(f_rk(2) + f_rk(3)) + f_rk(4))
+
+      RETURN
+      END SUBROUTINE BO_ACTVSTRN_RK
+!-----------------------------------------------------------------------
+!     Compute macroscopic fiber strain based on sacromere force-length
+!     relationship and calcium concentration using backward Euler
+      SUBROUTINE BO_ACTVSTRN_BE(c_c, dt, gf, itMax, atol, rtol)
+      IMPLICIT NONE
+      INTEGER, INTENT(INOUT) :: itMax
+      REAL(KIND=RKIND), INTENT(IN) :: c_c, dt, atol, rtol
+      REAL(KIND=RKIND), INTENT(OUT) :: gf
+
+      INTEGER :: k
+      LOGICAL :: l1, l2, l3
+      REAL(KIND=RKIND) :: gk, f, rK, Jac
+
+      CALL BO_ASTRN_GETF(c_c, gf, f)
+
+      k  = 0
+      gk = gf
+      l1 = .FALSE.
+      l2 = .FALSE.
+      l3 = .FALSE.
+      DO
+         k = k + 1
+
+         CALL BO_ASTRN_GETF(c_c, gk, f)
+         rK = gk - gf - (dt*f)
+
+         l1   = k .GT. itMax
+         l2   = ABS(rK) .LE. atol
+         l3   = ABS(rK/gk) .LE. rtol
+         IF (l1 .OR. l2 .OR. l3) EXIT
+
+         CALL BO_ASTRN_GETJ(c_c, gk, Jac)
+         Jac = 1._RKIND - dt*Jac
+
+         gk  = gk - rK/(Jac + eps)
+      END DO
+      gf = gk
+
+      IF (l1 .AND. .NOT.(l2) .AND. .NOT.(l3)) THEN
+         WRITE(*,'(4X,A)') "Warning: Newton-Raphson failed to "//
+     2      "converge (backward Euler)"
+      END IF
+
+      RETURN
+      END SUBROUTINE BO_ACTVSTRN_BE
+!-----------------------------------------------------------------------
+      SUBROUTINE BO_ASTRN_GETF(c_c, gf, f)
+      IMPLICIT NONE
+      REAL(KIND=RKIND), INTENT(IN) :: c_c, gf
+      REAL(KIND=RKIND), INTENT(OUT) :: f
+
+c      INTEGER (KIND=IKIND) i, j
+      REAL(KIND=RKIND) :: I4f, SL, RFL, mui, F_a
+c      REAL(KIND=RKIND) :: m1, ts
+
+      I4f = (1._RKIND + gf)**2
+      SL  = SQRT(I4f) * SL0
+
+      RFL = 0._RKIND
+      IF (SL.GE.SLmin .AND. SL.LE.SLmax) THEN
+         RFL = 0.5_RKIND*f0
+     2       + fc1*COS(SL) + fc2*COS(2._RKIND*SL) + fc3*COS(3._RKIND*SL)
+     3       + fs1*SIN(SL) + fs2*SIN(2._RKIND*SL) + fs3*SIN(3._RKIND*SL)
+      END IF
+      F_a  = alfa * RFL * (c_c - c_0)**2
+
+      mui  = 1._RKIND/(mu_c * c_c * c_c)
+      f    = mui * (F_a - 2._RKIND*gf/(1._RKIND + gf))
+
+c      ts = 0._RKIND
+c      DO i=1, 5
+c         j  = (i+1)*(i+2)
+c         m1 = (-1._RKIND)**REAL(i,KIND=RKIND)
+c         ts = ts + m1*REAL(j,KIND=RKIND)*(gf**REAL(i,KIND=RKIND))
+c      END DO
+c      f = mui * (F_a + I4f*ts)
+
+      RETURN
+      END SUBROUTINE BO_ASTRN_GETF
+!-----------------------------------------------------------------------
+      SUBROUTINE BO_ASTRN_GETJ(c_c, gf, Jac)
+      IMPLICIT NONE
+      REAL(KIND=RKIND), INTENT(IN) :: c_c, gf
+      REAL(KIND=RKIND), INTENT(OUT) :: Jac
+
+c      INTEGER (KIND=IKIND) i, j, k
+      REAL(KIND=RKIND) :: I4f, SL, dRFL, dFa, mui
+c      REAL(KIND=RKIND) :: m1, ts, dts
+
+      I4f = (1._RKIND + gf)**2
+      SL  = SQRT(I4f) * SL0
+
+      dRFL = 0._RKIND
+      IF (SL.GE.SLmin .AND. SL.LE.SLmax) THEN
+         dRFL = SL0 *  (fs1*COS(SL) - fc1*SIN(SL)
+     2      + 2._RKIND*(fs2*COS(2._RKIND*SL) - fc2*SIN(2._RKIND*SL))
+     3      + 3._RKIND*(fs3*COS(3._RKIND*SL) - fc3*SIN(3._RKIND*SL)))
+      END IF
+      dFa = alfa * dRFL * (c_c - c_0)**2
+
+      mui  = 1._RKIND/(mu_c * c_c * c_c)
+      Jac  = mui * (dFa - 2._RKIND/I4f)
+
+c      ts  = 0._RKIND
+c      dts = 0._RKIND
+c      DO i=1, 5
+c         j   = (i+1)*(i+2)
+c         k   = i*j
+c         m1  = (-1._RKIND)**REAL(i,KIND=RKIND)
+c         ts  = ts  + m1*REAL(j,KIND=RKIND)*(gf**REAL(i,KIND=RKIND))
+c         dts = dts + m1*REAL(k,KIND=RKIND)*(gf**REAL(i-1,KIND=RKIND))
+c      END DO
+c      Jac  = mui * (dFa + I4f*dts + 2._RKIND*SQRT(I4f)*ts)
+
+      RETURN
+      END SUBROUTINE BO_ASTRN_GETJ
 !--------------------------------------------------------------------
       FUNCTION STEP(r)
       IMPLICIT NONE
-      REAL(KIND=8), INTENT(IN) :: r
+      REAL(KIND=RKIND), INTENT(IN) :: r
 
-      REAL(KIND=8) STEP
+      REAL(KIND=RKIND) STEP
 
       IF (r .LT. 0) THEN
          STEP = 0.0D0
@@ -396,9 +630,9 @@
 !--------------------------------------------------------------------
       FUNCTION DELTA(r)
       IMPLICIT NONE
-      REAL(KIND=8), INTENT(IN) :: r
+      REAL(KIND=RKIND), INTENT(IN) :: r
 
-      REAL(KIND=8) DELTA
+      REAL(KIND=RKIND) DELTA
 
       DELTA = 0.0D0
       IF (ISZERO(r)) DELTA = 1.0D0
@@ -408,11 +642,11 @@
 !--------------------------------------------------------------------
       FUNCTION ISZERO(ia)
       IMPLICIT NONE
-      REAL(KIND=8), INTENT(IN) :: ia
+      REAL(KIND=RKIND), INTENT(IN) :: ia
       LOGICAL ISZERO
 
-      REAL(KIND=8), PARAMETER :: epsil = EPSILON(epsil)
-      REAL(KIND=8) a, b, nrm
+      REAL(KIND=RKIND), PARAMETER :: epsil = EPSILON(epsil)
+      REAL(KIND=RKIND) a, b, nrm
 
       a   = ABS(ia)
       b   = 0D0
@@ -423,6 +657,177 @@
 
       RETURN
       END FUNCTION ISZERO
+!-----------------------------------------------------------------------
+      SUBROUTINE GETRVAL(fileId, skwrd, rVal)
+      IMPLICIT NONE
+      INTEGER(KIND=IKIND), INTENT(IN) :: fileId
+      CHARACTER(LEN=*), INTENT(IN) :: skwrd
+      REAL(KIND=RKIND), INTENT(INOUT) :: rVal
+
+      INTEGER(KIND=IKIND) :: slen, i, ios
+      CHARACTER(LEN=stdL) :: sline, scmd, sval
+
+      REWIND(fileId)
+      slen = LEN(TRIM(skwrd))
+      DO
+         READ(fileId,'(A)',END=001) sline
+         sline = ADJUSTC(sline)
+         slen  = LEN(TRIM(sline))
+         IF (sline(1:1).EQ.'#' .OR. slen.EQ.0) CYCLE
+
+         DO i=1, slen
+            IF (sline(i:i) .EQ. ':') EXIT
+         END DO
+
+         IF (i .GE. slen) THEN
+            STOP "Error: inconsistent input file format"
+         END IF
+
+         scmd = sline(1:i-1)
+         sval = sline(i+1:slen)
+         sval = ADJUSTC(sval)
+
+!        Remove any trailing comments
+         slen = LEN(TRIM(sval))
+         DO i=1, slen
+            IF (sval(i:i) .EQ. '#') EXIT
+         END DO
+         sval = TRIM(ADJUSTC(sval(1:i-1)))
+
+         IF (TRIM(skwrd) .EQ. TRIM(scmd)) THEN
+            READ(sval,*,IOSTAT=ios) rval
+            IF (ios .NE. 0) THEN
+               STOP " Error: while reading "//TRIM(skwrd)
+            END IF
+            EXIT
+         END IF
+      END DO
+
+ 001  RETURN
+
+! 001  STOP " Error: EOF reached while finding command <"//
+!     2   TRIM(skwrd)//">"
+
+      END SUBROUTINE GETRVAL
+!-----------------------------------------------------------------------
+      SUBROUTINE GETRVEC(fileId, skwrd, nd, rVec)
+      IMPLICIT NONE
+      INTEGER(KIND=IKIND), INTENT(IN) :: fileId, nd
+      CHARACTER(LEN=*), INTENT(IN) :: skwrd
+      REAL(KIND=RKIND), INTENT(INOUT) :: rVec(nd)
+
+      INTEGER(KIND=IKIND) :: slen, i, ios, nt
+      CHARACTER(LEN=stdL) :: sline, scmd, sval
+      CHARACTER(LEN=stdL), DIMENSION(1024) :: tokList
+
+      REWIND(fileId)
+      slen = LEN(TRIM(skwrd))
+      DO
+         READ(fileId,'(A)',END=001) sline
+         sline = ADJUSTC(sline)
+         slen  = LEN(TRIM(sline))
+         IF (sline(1:1).EQ.'#' .OR. slen.EQ.0) CYCLE
+
+         DO i=1, slen
+            IF (sline(i:i) .EQ. ':') EXIT
+         END DO
+
+         IF (i .GE. slen) THEN
+            STOP "Error: inconsistent input file format"
+         END IF
+
+         scmd = sline(1:i-1)
+         sval = sline(i+1:slen)
+         sval = ADJUSTC(sval)
+
+!        Remove any trailing comments
+         slen = LEN(TRIM(sval))
+         DO i=1, slen
+            IF (sval(i:i) .EQ. '#') EXIT
+         END DO
+         sval = TRIM(ADJUSTC(sval(1:i-1)))
+
+         IF (TRIM(skwrd) .EQ. TRIM(scmd)) THEN
+            CALL PARSESTR(sval, tokList, nt)
+            IF (nt .NE. nd) THEN
+               DO i=1, nt
+                  WRITE(*,'(I2,2X,A)') i, TRIM(tokList(i))
+               END DO
+               STOP " Error: Unexpected token length "//TRIM(skwrd)
+            END IF
+
+            DO i=1, nt
+               READ(tokList(i),*,IOSTAT=ios) rvec(i)
+               IF (ios .NE. 0) THEN
+                  STOP " Error: while reading "//TRIM(skwrd)
+               END IF
+            END DO
+            EXIT
+         END IF
+      END DO
+
+      RETURN
+
+ 001  STOP " Error: EOF reached while finding command <"//
+     2   TRIM(skwrd)//">"
+
+      END SUBROUTINE GETRVEC
+!-----------------------------------------------------------------------
+!     Removes any leading spaces or tabs
+      PURE FUNCTION ADJUSTC(str)
+      IMPLICIT NONE
+      CHARACTER(LEN=*), INTENT(IN) :: str
+      CHARACTER(LEN=LEN(str)) ADJUSTC
+
+      INTEGER(KIND=IKIND) i
+
+      DO i=1, LEN(str)
+         IF (str(i:i) .NE. " " .AND. str(i:i) .NE. "  ") EXIT
+      END DO
+      IF (i .GT. LEN(str)) THEN
+         ADJUSTC = ""
+      ELSE
+         ADJUSTC = str(i:)
+      END IF
+
+      RETURN
+      END FUNCTION ADJUSTC
+!-----------------------------------------------------------------------
+      SUBROUTINE PARSESTR(strng, toks, ntoks)
+      IMPLICIT NONE
+      CHARACTER(LEN=*), INTENT(IN) :: strng
+      CHARACTER(LEN=*), DIMENSION(1024), INTENT(OUT) :: toks
+      INTEGER(KIND=IKIND), INTENT(OUT) :: ntoks
+
+      INTEGER(KIND=IKIND) :: i, j, slen
+      CHARACTER(LEN=stdL) :: dlmtr, token
+
+      dlmtr = ''
+      token = ''
+
+      dlmtr = '< (,=")>'
+      ntoks = 1
+      slen  = LEN(TRIM(strng))
+
+      ntoks = 0
+      i = 0
+      DO WHILE (i .LT. slen)
+         i = i + 1
+         IF (INDEX(dlmtr,strng(i:i)) .NE. 0) CYCLE
+         DO j=i+1, slen
+            IF (INDEX(dlmtr,strng(j:j)) .NE. 0) EXIT
+         END DO
+         IF (j .LE. slen) THEN
+            ntoks = ntoks + 1
+            toks(ntoks) = strng(i:j-1)
+            i = j-1
+         ELSE
+            EXIT
+         END IF
+      END DO
+
+      RETURN
+      END SUBROUTINE PARSESTR
 !--------------------------------------------------------------------
       END MODULE BOMOD
 !####################################################################

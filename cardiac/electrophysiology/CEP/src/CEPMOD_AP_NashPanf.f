@@ -254,15 +254,24 @@
 !-----------------------------------------------------------------------
 !     Compute activation force for electromechanics based on active
 !     stress model using forward Euler integration
-      SUBROUTINE AP_ACTVSTRS_FE(X, dt, Ta)
+      SUBROUTINE AP_ACTVSTRS_FE(V, dt, Ta)
       IMPLICIT NONE
-      REAL(KIND=RKIND), INTENT(IN) :: X, dt
+      REAL(KIND=RKIND), INTENT(IN) :: V, dt
       REAL(KIND=RKIND), INTENT(INOUT) :: Ta
 
-      REAL(KIND=RKIND) :: epsX, f
+      REAL(KIND=RKIND) :: X, epsX, f
 
-      epsX = EXP(-EXP(-xi_T*(X - Vcrit)))
-      epsX = eps_0 + (eps_i - eps_0)*epsX
+c     Nash-Panfilov model
+      X = (V - Voffset)/Vscale
+      IF (X .LT. 0.05_RKIND) THEN
+         epsX = eps_0
+      ELSE IF (X .GE. 0.05_RKIND) THEN
+         epsX = eps_i
+      END IF
+
+c      X = V
+c      epsX = EXP(-EXP(-xi_T*(X - Vcrit)))
+c      epsX = eps_0 + (eps_i - eps_0)*epsX
 
       CALL AP_ASTRS_GETF(X, epsX, Ta, f)
       Ta = Ta + (dt*f)
@@ -272,16 +281,26 @@
 !-----------------------------------------------------------------------
 !     Compute activation force for electromechanics based on active
 !     stress model using RK4 integration
-      SUBROUTINE AP_ACTVSTRS_RK(X, dt, Ta)
+      SUBROUTINE AP_ACTVSTRS_RK(V, dt, Ta)
       IMPLICIT NONE
-      REAL(KIND=RKIND), INTENT(IN) :: X, dt
+      REAL(KIND=RKIND), INTENT(IN) :: V, dt
       REAL(KIND=RKIND), INTENT(INOUT) :: Ta
 
-      REAL(KIND=RKIND) :: dt6, epsX, Ta_rk, f_rk(4)
+      REAL(KIND=RKIND) :: dt6, X, epsX, Ta_rk, f_rk(4)
 
       dt6  = dt / 6._RKIND
-      epsX = EXP(-EXP(-xi_T*(X - Vcrit)))
-      epsX = eps_0 + (eps_i - eps_0)*epsX
+
+c     Nash-Panfilov model
+      X = (V - Voffset)/Vscale
+      IF (X .LT. 0.05_RKIND) THEN
+         epsX = eps_0
+      ELSE IF (X .GE. 0.05_RKIND) THEN
+         epsX = eps_i
+      END IF
+
+c      X = V
+c      epsX = EXP(-EXP(-xi_T*(X - Vcrit)))
+c      epsX = eps_0 + (eps_i - eps_0)*epsX
 
       Ta_rk = Ta
       CALL AP_ASTRS_GETF(X, epsX, Ta_rk, f_rk(1))
@@ -302,17 +321,28 @@
 !-----------------------------------------------------------------------
 !     Compute activation force for electromechanics based on active
 !     stress model using backward Euler integration
-      SUBROUTINE AP_ACTVSTRS_BE(X, dt, Ta)
+      SUBROUTINE AP_ACTVSTRS_BE(V, dt, Ta)
       IMPLICIT NONE
-      REAL(KIND=RKIND), INTENT(IN) :: X, dt
+      REAL(KIND=RKIND), INTENT(IN) :: V, dt
       REAL(KIND=RKIND), INTENT(INOUT) :: Ta
 
-      REAL(KIND=RKIND) :: epsX
+      REAL(KIND=RKIND) :: X, epsX
 
-      epsX = EXP(-EXP(-xi_T*(X - Vcrit)))
-      epsX = eps_0 + (eps_i - eps_0)*epsX
+c     Nash-Panfilov model
+      X = (V - Voffset)/Vscale
+      IF (X .LT. 0.05_RKIND) THEN
+         epsX = eps_0
+      ELSE IF (X .GE. 0.05_RKIND) THEN
+         epsX = eps_i
+      END IF
 
-      Ta = (Ta + (dt*epsX*K_T*(X-Vrest))) / (1._RKIND + epsX*dt)
+      Ta = (Ta + (dt*epsX*K_T*X)) / (1._RKIND + epsX*dt)
+
+c      X = V
+c      epsX = EXP(-EXP(-xi_T*(X - Vcrit)))
+c      epsX = eps_0 + (eps_i - eps_0)*epsX
+
+c      Ta = (Ta + (dt*epsX*K_T*(X-Vrest))) / (1._RKIND + epsX*dt)
 
       RETURN
       END SUBROUTINE AP_ACTVSTRS_BE
@@ -322,7 +352,8 @@
       REAL(KIND=RKIND), INTENT(IN) :: X, eX, Ta
       REAL(KIND=RKIND), INTENT(OUT) :: f
 
-      f = eX*(K_T*(X-Vrest) - Ta)
+c      f = eX*(K_T*(X-Vrest) - Ta)
+      f = eX*(K_T*X - Ta)
 
       RETURN
       END SUBROUTINE AP_ASTRS_GETF

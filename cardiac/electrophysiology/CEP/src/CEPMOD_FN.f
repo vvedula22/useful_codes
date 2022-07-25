@@ -37,6 +37,7 @@
 !-----------------------------------------------------------------------
 
       MODULE FNMOD
+      USE TYPEMOD
       IMPLICIT NONE
 
       INTERFACE FN_INIT

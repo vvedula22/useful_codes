@@ -1,34 +1,3 @@
-!
-! Copyright (c) Stanford University, The Regents of the University of
-!               California, and others.
-!
-! All Rights Reserved.
-!
-! See Copyright-SimVascular.txt for additional details.
-!
-! Permission is hereby granted, free of charge, to any person obtaining
-! a copy of this software and associated documentation files (the
-! "Software"), to deal in the Software without restriction, including
-! without limitation the rights to use, copy, modify, merge, publish,
-! distribute, sublicense, and/or sell copies of the Software, and to
-! permit persons to whom the Software is furnished to do so, subject
-! to the following conditions:
-!
-! The above copyright notice and this permission notice shall be included
-! in all copies or substantial portions of the Software.
-!
-! THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
-! IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
-! TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-! PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
-! OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-! EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-! PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-! PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-! LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-! NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-!
 !-----------------------------------------------------------------------
 !
 !     This module defines data structures for cardiac electrophysiology
@@ -38,102 +7,119 @@
 !-----------------------------------------------------------------------
 
       MODULE CEPMOD
-      USE UTILMOD
       USE APMOD
       USE FNMOD
       USE TTPMOD
       USE BOMOD
+      USE UTILMOD, ONLY : stdL
       IMPLICIT NONE
 
 !     Type of cardiac electrophysiology models: Aliev-Panfilov model,
 !     Bueno-Orovio-Cherry-Fenton model, Fitzhugh-Nagumo model,
 !     tenTusscher-Panfilov 2006 model
-      INTEGER, PARAMETER :: cepModel_NA = 100, cepModel_AP = 101,
-     2   cepModel_BO = 102, cepModel_FN = 103, cepModel_TTP = 104
+      INTEGER(KIND=IKIND), PARAMETER :: cepModel_NA = 100,
+     2   cepModel_AP = 101, cepModel_BO = 102, cepModel_FN = 103,
+     3   cepModel_TTP = 104
 
 !     Time integration scheme: Forward-Euler, Runge-Kutta 4th order,
 !     Crank-Nicholson
-      INTEGER, PARAMETER :: tIntType_NA  = 200, tIntType_FE = 201,
-     2   tIntType_RK4 = 202, tIntType_CN2 = 203
+      INTEGER(KIND=IKIND), PARAMETER :: tIntType_NA  = 200,
+     2   tIntType_FE = 201, tIntType_RK4 = 202, tIntType_CN2 = 203,
+     3   tIntType_BE = 204
+
+!!     Type of excitation-contraction coupling for electromechanics
+!      INTEGER(KIND=IKIND), PARAMETER :: ecType_NA = 300,
+!     2   ecType_ss_cpld = 301, ecType_ss_dcpld = 302,
+!     3   ecType_sn_tiso = 303, ecType_sn_ortho = 304,
+!     4   ecType_sn_hetero = 305
 
 !     Time integration scheme and related parameters
       TYPE odeType
 !        Time integration method type
-         INTEGER :: tIntType = tIntType_NA
+         INTEGER(KIND=IKIND) :: tIntType = tIntType_NA
 !        Max. iterations for Newton-Raphson method
-         INTEGER :: maxItr = 5
+         INTEGER(KIND=IKIND) :: maxItr = 5
 !        Absolute tolerance
-         REAL(KIND=8) :: absTol = 1D-8
+         REAL(KIND=RKIND) :: absTol = 1.E-8_RKIND
 !        Relative tolerance
-         REAL(KIND=8) :: relTol = 1D-4
+         REAL(KIND=RKIND) :: relTol = 1.E-4_RKIND
       END TYPE odeType
 
 !     External stimulus type
       TYPE stimType
 !        start time
-         REAL(KIND=8) :: Ts = 0D0
+         REAL(KIND=RKIND) :: Ts = 0._RKIND
 !        duration of stimulus
-         REAL(KIND=8) :: Td = 0D0
+         REAL(KIND=RKIND) :: Td = 0._RKIND
 !        end time
-         REAL(KIND=8) :: Te = 0D0
+         REAL(KIND=RKIND) :: Te = 0._RKIND
 !        cycle length
-         REAL(KIND=8) :: CL = 0D0
+         REAL(KIND=RKIND) :: CL = 0._RKIND
 !        stimulus amplitude
-         REAL(KIND=8) :: A = 0D0
+         REAL(KIND=RKIND) :: A = 0._RKIND
       END TYPE stimType
 
 !     S1S2 protocol data type
       TYPE S1S2type
 !        Num S1 repeats before S2 stimulus
-         INTEGER :: nrep = 0
+         INTEGER(KIND=IKIND) :: nrep = 0
 !        Counter to track S1 repeats
-         INTEGER :: cntr = 1
+         INTEGER(KIND=IKIND) :: cntr = 1
 !        Diastolic interval
-         REAL(KIND=8) :: DI = 0D0
+         REAL(KIND=RKIND) :: DI = 0._RKIND
 !        Action potential duration
-         REAL(KIND=8) :: APD = 0D0
+         REAL(KIND=RKIND) :: APD = 0._RKIND
 !        S2 stimulus
-         REAL(KIND=8) :: Istim_A
+         REAL(KIND=RKIND) :: Istim_A
       END TYPE S1S2type
+
+!     Excitation-contraction coupling type
+      TYPE ecCpldType
+!        Active stress coupling
+         LOGICAL :: astress = .FALSE.
+!        Active strain coupling
+         LOGICAL :: astrain = .FALSE.
+!        Time integration options
+         TYPE(odeType) :: odeS
+!        Excitation-contraction coupling
+!         INTEGER(KIND=IKIND) :: ecType = ecType_NA
+!        Active stress/strain state variable
+         REAL(KIND=RKIND) :: Ta
+      END TYPE ecCpldType
 
 !     Cardiac electrophysiology model type
       TYPE cepModelType
-!        EM coupling
-         LOGICAL :: emCpld = .FALSE.
 !        Type of cardiac electrophysiology model
-         INTEGER :: cepType = cepModel_NA
+         INTEGER(KIND=IKIND) :: cepType = cepModel_NA
 !        Myocardium zone id: 1-epi; 2-endo; 3-myo
-         INTEGER :: imyo = 1
-!        Constant for stretch-activated-currents
-         REAL(KIND=8) :: Ksac = 0D0
-!        Activation force
-         REAL(KIND=8) :: Tact = 0D0
+         INTEGER(KIND=IKIND) :: imyo = 1
 !        External stimulus
          TYPE(stimType) :: Istim
 !        Time integration options
          TYPE(odeType) :: odeS
 !        S1S2 type
          TYPE(S1S2type) :: S1S2
+!        Excitation-contraction coupling
+         TYPE(ecCpldType) :: ec
       END TYPE cepModelType
 
-!     Display progress
-      LOGICAL iProg
-!     No. of time steps
-      INTEGER nTS
+!     Initialize parameters from file
+      LOGICAL :: init_param_file
+
+!     Input parameters file path
+      CHARACTER(LEN=stdL) :: fparam_in
+
 !     Number of state variables
-      INTEGER :: nX = 0
+      INTEGER(KIND=IKIND) :: nX = 0
+
 !     Number of gating variables
-      INTEGER :: nG = 0
-!     Time step increment
-      REAL(KIND=8) :: dt = 0D0
-!     Output log file
-      CHARACTER(LEN=stdL) :: oFile
+      INTEGER(KIND=IKIND) :: nG = 0
+
 !     State variables
-      REAL(KIND=8), ALLOCATABLE :: X(:)
+      REAL(KIND=RKIND), ALLOCATABLE :: X(:)
+
 !     Gating variables
-      REAL(KIND=8), ALLOCATABLE :: Xg(:)
-!     Cardiac electrophysiology type
-      TYPE(cepModelType) :: cep
+      REAL(KIND=RKIND), ALLOCATABLE :: Xg(:)
 
       END MODULE CEPMOD
 !#######################################################################

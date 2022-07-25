@@ -39,7 +39,7 @@ OBJ_DIR = $(CUR_DIR)obj
 BIN_DIR = $(CUR_DIR)bin
 
 FC = gfortran
-FFLAGS  = -O3
+FFLAGS  = -O3 -cpp
 FFLAGS += -J $(OBJ_DIR)
 LAPACK_LFLAGS = -llapack
 
@@ -55,15 +55,20 @@ endif
 
 INCLUDES += -I./include
 
-MYFUN  = MATFUN.f      \
-         UTIL.f        \
+MYFUN  = COM_TYPE.f    \
+         COM_UTIL.f    \
+         COM_CHNL.f    \
+         COM_LIST.f    \
+         MATFUN.f      \
          CEPMOD_AP.f   \
          CEPMOD_BO.f   \
          CEPMOD_FN.f   \
-	 CEPMOD_TTP.f  \
+         CEPMOD_TTP.f  \
          CEPMOD.f      \
-	 CEPION.f      \
-         MAIN.f
+         COM_MOD.f     \
+         CEPION.f      \
+         MAIN.f        \
+         READFILES.f
 
 MYEXE  = $(BIN_DIR)/cep.exe
 

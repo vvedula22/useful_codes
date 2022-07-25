@@ -1,34 +1,3 @@
-!
-! Copyright (c) Stanford University, The Regents of the University of
-!               California, and others.
-!
-! All Rights Reserved.
-!
-! See Copyright-SimVascular.txt for additional details.
-!
-! Permission is hereby granted, free of charge, to any person obtaining
-! a copy of this software and associated documentation files (the
-! "Software"), to deal in the Software without restriction, including
-! without limitation the rights to use, copy, modify, merge, publish,
-! distribute, sublicense, and/or sell copies of the Software, and to
-! permit persons to whom the Software is furnished to do so, subject
-! to the following conditions:
-!
-! The above copyright notice and this permission notice shall be included
-! in all copies or substantial portions of the Software.
-!
-! THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
-! IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
-! TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-! PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
-! OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-! EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-! PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-! PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-! LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-! NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-!
 !-----------------------------------------------------------------------
 !
 !     This module defines data structures for ten Tusscher-Panfilov
@@ -37,15 +6,34 @@
 !-----------------------------------------------------------------------
 
       MODULE TTPMOD
+      USE TYPEMOD
+      USE UTILMOD, ONLY : stdL
       IMPLICIT NONE
+
+      PRIVATE
+
+      REAL(KIND=RKIND), PARAMETER :: eps = EPSILON(eps)
+
+      INCLUDE "PARAMS_TTP.f"
+
+      PUBLIC :: TTP_INIT
+      PUBLIC :: TTP_READPARFF
+      PUBLIC :: TTP_INTEGFE
+      PUBLIC :: TTP_INTEGRK
+      PUBLIC :: TTP_INTEGCN2
+      PUBLIC :: TTP_ACTVSTRS_FE
+      PUBLIC :: TTP_ACTVSTRS_RK
+      PUBLIC :: TTP_ACTVSTRS_BE
+      PUBLIC :: TTP_ACTVSTRN_FE
+      PUBLIC :: TTP_ACTVSTRN_RK
+      PUBLIC :: TTP_ACTVSTRN_BE
 
       CONTAINS
 !-----------------------------------------------------------------------
-      SUBROUTINE TTP_INIT(imyo, nX, nG, X, Xg, X0, Xg0)
+      SUBROUTINE TTP_INIT(imyo, nX, nG, X, Xg)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: imyo, nX, nG
-      REAL(KINd=8), INTENT(OUT) :: X(nX), Xg(nG)
-      REAL(KIND=8), INTENT(IN), OPTIONAL :: X0(nX), Xg0(nG)
+      REAL(KIND=RKIND), INTENT(OUT) :: X(nX), Xg(nG)
 
       SELECT CASE (imyo)
       CASE (1) ! EPI !
@@ -122,32 +110,113 @@
 
       END SELECT
 
-      IF (PRESENT(X0)) THEN
-         IF (SIZE(X0,1) .NE. nX) THEN
-            STOP "ERROR: inconsistent array size (TTP initialization)"
-         END IF
-         X(:)  = X0(:)
-      END IF
-
-      IF (PRESENT(Xg0)) THEN
-         IF (SIZE(Xg0,1) .NE. nG) THEN
-            STOP "ERROR: inconsistent array size (TTP initialization)"
-         END IF
-         Xg(:) = Xg0(:)
-      END IF
-
       RETURN
       END SUBROUTINE TTP_INIT
+!-----------------------------------------------------------------------
+      SUBROUTINE TTP_READPARFF(fname)
+      IMPLICIT NONE
+      CHARACTER(LEN=*), INTENT(IN) :: fname
+
+      INTEGER fid
+
+      fid = 1528
+
+      OPEN(fid, FILE=TRIM(fname))
+      CALL GETRVAL(fid, "Rc", Rc)
+      CALL GETRVAL(fid, "Tc", Tc)
+      CALL GETRVAL(fid, "Fc", Fc)
+      CALL GETRVAL(fid, "Cm", Cm)
+      CALL GETRVAL(fid, "sV", sV)
+      CALL GETRVAL(fid, "rho", rho)
+      CALL GETRVAL(fid, "V_c", V_c)
+      CALL GETRVAL(fid, "V_sr", V_sr)
+      CALL GETRVAL(fid, "V_ss", V_ss)
+      CALL GETRVAL(fid, "K_o", K_o)
+      CALL GETRVAL(fid, "Na_o", Na_o)
+      CALL GETRVAL(fid, "Ca_o", Ca_o)
+      CALL GETRVAL(fid, "G_Na", G_Na)
+      CALL GETRVAL(fid, "G_K1", G_K1)
+      CALL GETRVEC(fid, "G_to", 3, G_to)
+      CALL GETRVAL(fid, "G_Kr", G_Kr)
+      CALL GETRVEC(fid, "G_Ks", 3, G_Ks)
+      CALL GETRVAL(fid, "p_KNa", p_KNa)
+      CALL GETRVAL(fid, "G_CaL", G_CaL)
+      CALL GETRVAL(fid, "K_NaCa", K_NaCa)
+      CALL GETRVAL(fid, "gamma", gamma)
+      CALL GETRVAL(fid, "K_mCa", K_mCa)
+      CALL GETRVAL(fid, "K_mNai", K_mNai)
+      CALL GETRVAL(fid, "K_sat", K_sat)
+      CALL GETRVAL(fid, "alpha", alpha)
+      CALL GETRVAL(fid, "p_NaK", p_NaK)
+      CALL GETRVAL(fid, "K_mK", K_mK)
+      CALL GETRVAL(fid, "K_mNa", K_mNa)
+      CALL GETRVAL(fid, "G_pK", G_pK)
+      CALL GETRVAL(fid, "G_pCa", G_pCa)
+      CALL GETRVAL(fid, "K_pCa", K_pCa)
+      CALL GETRVAL(fid, "G_bNa", G_bNa)
+      CALL GETRVAL(fid, "G_bCa", G_bCa)
+      CALL GETRVAL(fid, "Vmax_up", Vmax_up)
+      CALL GETRVAL(fid, "K_up", K_up)
+      CALL GETRVAL(fid, "V_rel", V_rel)
+      CALL GETRVAL(fid, "k1p", k1p)
+      CALL GETRVAL(fid, "k2p", k2p)
+      CALL GETRVAL(fid, "k3", k3)
+      CALL GETRVAL(fid, "k4", k4)
+      CALL GETRVAL(fid, "EC", EC)
+      CALL GETRVAL(fid, "max_sr", max_sr)
+      CALL GETRVAL(fid, "min_sr", min_sr)
+      CALL GETRVAL(fid, "V_leak", V_leak)
+      CALL GETRVAL(fid, "V_xfer", V_xfer)
+      CALL GETRVAL(fid, "Buf_c", Buf_c)
+      CALL GETRVAL(fid, "K_bufc", K_bufc)
+      CALL GETRVAL(fid, "Buf_sr", Buf_sr)
+      CALL GETRVAL(fid, "K_bufsr", K_bufsr)
+      CALL GETRVAL(fid, "Buf_ss", Buf_ss)
+      CALL GETRVAL(fid, "K_bufss", K_bufss)
+      CALL GETRVAL(fid, "Vrest", Vrest)
+
+!     Electromechanics coupling parameters: active stress model
+      CALL GETRVAL(fid, "Ca_rest", Ca_rest)
+      CALL GETRVAL(fid, "Ca_crit", Ca_crit)
+      CALL GETRVAL(fid, "K_T", K_T)
+      CALL GETRVAL(fid, "eps_0", eps_0)
+      CALL GETRVAL(fid, "eps_i", eps_i)
+      CALL GETRVAL(fid, "xi_T", xi_T)
+
+!     Electromechanics coupling parameters: active strain model
+      CALL GETRVAL(fid, "alfa", alfa)
+      CALL GETRVAL(fid, "c_Ca0", c_Ca0)
+      CALL GETRVAL(fid, "mu_Ca", mu_Ca)
+      CALL GETRVAL(fid, "SL0", SL0)
+      CALL GETRVAL(fid, "SLmin", SLmin)
+      CALL GETRVAL(fid, "SLmax", SLmax)
+      CALL GETRVAL(fid, "f0", f0)
+      CALL GETRVAL(fid, "fc1", fc1)
+      CALL GETRVAL(fid, "fs1", fs1)
+      CALL GETRVAL(fid, "fc2", fc2)
+      CALL GETRVAL(fid, "fs2", fs2)
+      CALL GETRVAL(fid, "fc3", fc3)
+      CALL GETRVAL(fid, "fs3", fs3)
+
+!     Scaling factors
+      CALL GETRVAL(fid, "Vscale", Vscale)
+      CALL GETRVAL(fid, "Tscale", Tscale)
+      CALL GETRVAL(fid, "Voffset", Voffset)
+
+      CLOSE(fid)
+
+      RETURN
+      END SUBROUTINE TTP_READPARFF
 !-----------------------------------------------------------------------
 !     Time integration performed using Forward Euler method
       SUBROUTINE TTP_INTEGFE(imyo, nX, nG, X, Xg, Ts, dt, Istim, Ksac,
      2   RPAR)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: imyo, nX, nG
-      REAL(KIND=8), INTENT(INOUT) :: X(nX), Xg(nG), RPAR(18)
-      REAL(KIND=8), INTENT(IN) :: Ts, dt, Istim, Ksac
+      REAL(KIND=RKIND), INTENT(INOUT) :: X(nX), Xg(nG), RPAR(18)
+      REAL(KIND=RKIND), INTENT(IN) :: Ts, dt, Istim, Ksac
 
-      REAL(KIND=8) :: f(nX)
+      REAL(KIND=RKIND) :: f(nX)
 
 !     Get time derivatives (RHS)
       CALL TTP_GETF(imyo, nX, nG, X, Xg, f, Istim, Ksac, RPAR)
@@ -166,10 +235,10 @@
      2   RPAR)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: imyo, nX, nG
-      REAL(KIND=8), INTENT(INOUT) :: X(nX), Xg(nG), RPAR(18)
-      REAL(KIND=8), INTENT(IN) :: Ts, dt, Istim, Ksac
+      REAL(KIND=RKIND), INTENT(INOUT) :: X(nX), Xg(nG), RPAR(18)
+      REAL(KIND=RKIND), INTENT(IN) :: Ts, dt, Istim, Ksac
 
-      REAL(KIND=8) :: dt6, Xrk(nX), Xgr(nG), frk(nX,4)
+      REAL(KIND=RKIND) :: dt6, Xrk(nX), Xgr(nG), frk(nX,4)
 
       dt6 = dt/6.0D0
 
@@ -211,14 +280,12 @@
       SUBROUTINE TTP_GETF(i, nX, nG, X, Xg, dX, I_stim, K_sac, RPAR)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: i, nX, nG
-      REAL(KIND=8), INTENT(IN) :: X(nX), Xg(nG), I_stim, K_sac
-      REAL(KIND=8), INTENT(OUT) :: dX(nX)
-      REAL(KIND=8), INTENT(INOUT) :: RPAR(18)
+      REAL(KIND=RKIND), INTENT(IN) :: X(nX), Xg(nG), I_stim, K_sac
+      REAL(KIND=RKIND), INTENT(OUT) :: dX(nX)
+      REAL(KIND=RKIND), INTENT(INOUT) :: RPAR(18)
 
-      INCLUDE "PARAMS_TTP.f"
-
-      REAL(KIND=8) :: RT, a, b, tau, sq5, e1, e2, e3, e4, n1, n2, d1,
-     2   d2, d3, I_sac
+      REAL(KIND=RKIND) :: RT, a, b, tau, sq5, e1, e2, e3, e4, n1, n2,
+     2   d1, d2, d3, I_sac
 
 !     Local copies of state variables
       V     = X(1)
@@ -384,12 +451,10 @@
       SUBROUTINE TTP_UPDATEG(i, dt, n, nG, X, Xg)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: i, n, nG
-      REAL(KIND=8), INTENT(IN) :: dt, X(n)
-      REAL(KIND=8), INTENT(INOUT) :: Xg(nG)
+      REAL(KIND=RKIND), INTENT(IN) :: dt, X(n)
+      REAL(KIND=RKIND), INTENT(INOUT) :: Xg(nG)
 
-      INCLUDE "PARAMS_TTP.f"
-
-      REAL(KIND=8) :: a, b, c, tau
+      REAL(KIND=RKIND) :: a, b, c, tau
 
       V     = X(1)
       Ca_ss = X(5)
@@ -518,14 +583,12 @@
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: imyo, nX, nG
       INTEGER, INTENT(INOUT) :: IPAR(2)
-      REAL(KIND=8), INTENT(INOUT) :: Xn(nX), Xg(nG), RPAR(18)
-      REAL(KIND=8), INTENT(IN) :: Ts, dt, Istim, Ksac
-
-      REAL(KIND=8), PARAMETER :: eps = EPSILON(eps)
+      REAL(KIND=RKIND), INTENT(INOUT) :: Xn(nX), Xg(nG), RPAR(18)
+      REAL(KIND=RKIND), INTENT(IN) :: Ts, dt, Istim, Ksac
 
       INTEGER :: i, k, itMax
       LOGICAL :: l1, l2, l3
-      REAL(KIND=8) :: t, atol, rtol, Xk(nX), fn(nX), fk(nX), rK(nX),
+      REAL(KIND=RKIND) :: t, atol, rtol, Xk(nX), fn(nX), fk(nX), rK(nX),
      2   Im(nX,nX), JAC(nX,nX), rmsA, rmsR
 
       itMax = IPAR(1)
@@ -579,13 +642,11 @@
       SUBROUTINE TTP_GETJ(i, nX, nG, X, Xg, JAC, Ksac)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: i, nX, nG
-      REAL(KIND=8), INTENT(IN) :: X(nX), Xg(nG), Ksac
-      REAL(KIND=8), INTENT(OUT) :: JAC(nX,nX)
+      REAL(KIND=RKIND), INTENT(IN) :: X(nX), Xg(nG), Ksac
+      REAL(KIND=RKIND), INTENT(OUT) :: JAC(nX,nX)
 
-      INCLUDE "PARAMS_TTP.f"
-
-      REAL(KIND=8) :: RT, a, b, c, tau, sq5, e1, e2, e3, e4, n1, n2, d1,
-     2   d2, d3
+      REAL(KIND=RKIND) :: RT, a, b, c, tau, sq5, e1, e2, e3, e4, n1, n2,
+     2   d1, d2, d3
 
 !     Local copies of state variables
       V     = X(1)
@@ -827,56 +888,409 @@
       END SUBROUTINE TTP_GETJ
 !-----------------------------------------------------------------------
 !     Compute activation force for electromechanics based on active
-!     stress model
-      SUBROUTINE TTP_ACTVSTRS(c_Ca, dt, Tact, epsX)
+!     stress model using forward Euler integration
+      SUBROUTINE TTP_ACTVSTRS_FE(c_Ca, dt, Ta)
       IMPLICIT NONE
-      REAL(KIND=8), INTENT(IN) :: c_Ca, dt
-      REAL(KIND=8), INTENT(OUT) :: epsX
-      REAL(KIND=8), INTENT(INOUT) :: Tact
+      REAL(KIND=RKIND), INTENT(IN) :: c_Ca, dt
+      REAL(KIND=RKIND), INTENT(INOUT) :: Ta
 
-      INCLUDE "PARAMS_TTP.f"
+      REAL(KIND=RKIND) :: eps_Ca, f
 
-      REAL(KIND=8) :: nr
+      eps_Ca = EXP(-EXP(-xi_T*(c_Ca - Ca_crit)))
+      eps_Ca = eps_0 + (eps_i - eps_0)*eps_Ca
 
-      epsX = EXP(-EXP(-xi_T*(c_Ca - Ca_crit)))
-      epsX = eps_0 + (eps_i - eps_0)*epsX
-      nr   = Tact + epsX*dt*eta_T*(c_Ca - Ca_rest)
-      Tact = nr / (1.0D0 + epsX*dt)
+      CALL TTP_ASTRS_GETF(c_Ca, eps_Ca, Ta, f)
+      Ta = Ta + (dt*f)
 
       RETURN
-      END SUBROUTINE TTP_ACTVSTRS
+      END SUBROUTINE TTP_ACTVSTRS_FE
+!-----------------------------------------------------------------------
+!     Compute activation force for electromechanics based on active
+!     stress model using RK4 integration
+      SUBROUTINE TTP_ACTVSTRS_RK(c_Ca, dt, Ta)
+      IMPLICIT NONE
+      REAL(KIND=RKIND), INTENT(IN) :: c_Ca, dt
+      REAL(KIND=RKIND), INTENT(INOUT) :: Ta
+
+      REAL(KIND=RKIND) :: dt6, eps_Ca, Ta_rk, f_rk(4)
+
+      dt6  = dt / 6._RKIND
+      eps_Ca = EXP(-EXP(-xi_T*(c_Ca - Ca_crit)))
+      eps_Ca = eps_0 + (eps_i - eps_0)*eps_Ca
+
+      Ta_rk = Ta
+      CALL TTP_ASTRS_GETF(c_Ca, eps_Ca, Ta_rk, f_rk(1))
+
+      Ta_rk = Ta + (0.5_RKIND*dt*f_rk(1))
+      CALL TTP_ASTRS_GETF(c_Ca, eps_Ca, Ta_rk, f_rk(2))
+
+      Ta_rk = Ta + (0.5_RKIND*dt*f_rk(2))
+      CALL TTP_ASTRS_GETF(c_Ca, eps_Ca, Ta_rk, f_rk(3))
+
+      Ta_rk = Ta + (dt*f_rk(3))
+      CALL TTP_ASTRS_GETF(c_Ca, eps_Ca, Ta_rk, f_rk(4))
+
+      Ta = Ta + dt6*(f_rk(1) + 2._RKIND*(f_rk(2) + f_rk(3)) + f_rk(4))
+
+      RETURN
+      END SUBROUTINE TTP_ACTVSTRS_RK
+!-----------------------------------------------------------------------
+!     Compute activation force for electromechanics based on active
+!     stress model using backward Euler integration
+      SUBROUTINE TTP_ACTVSTRS_BE(c_Ca, dt, Ta)
+      IMPLICIT NONE
+      REAL(KIND=RKIND), INTENT(IN) :: c_Ca, dt
+      REAL(KIND=RKIND), INTENT(INOUT) :: Ta
+
+      REAL(KIND=RKIND) :: eps_Ca
+
+      eps_Ca = EXP(-EXP(-xi_T*(c_Ca - Ca_crit)))
+      eps_Ca = eps_0 + (eps_i - eps_0)*eps_Ca
+
+      Ta = (Ta + (dt*eps_Ca*K_T*(c_Ca-Ca_rest)))/(1._RKIND + eps_Ca*dt)
+
+      RETURN
+      END SUBROUTINE TTP_ACTVSTRS_BE
+!-----------------------------------------------------------------------
+      SUBROUTINE TTP_ASTRS_GETF(c_Ca, e_Ca, Ta, f)
+      IMPLICIT NONE
+      REAL(KIND=RKIND), INTENT(IN) :: c_Ca, e_Ca, Ta
+      REAL(KIND=RKIND), INTENT(OUT) :: f
+
+      f = e_Ca*(K_T*(c_Ca-Ca_rest) - Ta)
+
+      RETURN
+      END SUBROUTINE TTP_ASTRS_GETF
 !-----------------------------------------------------------------------
 !     Compute macroscopic fiber strain based on sacromere force-length
-!     relationship and calcium concentration
-      SUBROUTINE TTP_ACTVSTRN(c_Ca, I4f, dt, gf)
+!     relationship and calcium concentration using forward Euler
+      SUBROUTINE TTP_ACTVSTRN_FE(c_Ca, dt, gf)
       IMPLICIT NONE
-      REAL(KIND=8), INTENT(IN) :: c_Ca, I4f, dt
-      REAL(KIND=8), INTENT(INOUT) :: gf
+      REAL(KIND=RKIND), INTENT(IN) :: c_Ca, dt
+      REAL(KIND=RKIND), INTENT(INOUT) :: gf
 
-      INCLUDE "PARAMS_TTP.f"
+      REAL(KIND=RKIND) :: f
 
-      REAL(KIND=8) :: SL, Fa, rtmp
-
-!     fiber length
-      SL = I4f * SL0
-
-!     Sacromere force-length relationship
-      IF (SL.GE.SLmin .AND. SL.LE.SLmax) THEN
-         SL = 0.5D0*f0 + fc1*COS(SL) + fs1*SIN(SL) +
-     2      fc2*COS(2.0D0*SL) + fs2*SIN(2.0D0*SL)  +
-     3      fc3*COS(3.0D0*SL) + fs3*SIN(3.0D0*SL)
-      ELSE
-         SL = 0.0D0
-      END IF
-
-!     Active force
-      Fa   = alFa * (c_Ca-c_Ca0)*(c_Ca-c_Ca0) * SL
-
-      rtmp = 2.0D0*I4f*(1.0D0/(1.0D0+gf)**3.0D0 - 1.0D0)
-      gf = gf + dt*(Fa + rtmp)/(mu_Ca * c_Ca * c_Ca)
+      CALL TTP_ASTRN_GETF(c_Ca, gf, f)
+      gf = gf + (dt*f)
 
       RETURN
-      END SUBROUTINE TTP_ACTVSTRN
+      END SUBROUTINE TTP_ACTVSTRN_FE
+!-----------------------------------------------------------------------
+!     Compute macroscopic fiber strain based on sacromere force-length
+!     relationship and calcium concentration using Runge-Kutta
+      SUBROUTINE TTP_ACTVSTRN_RK(c_Ca, dt, gf)
+      IMPLICIT NONE
+      REAL(KIND=RKIND), INTENT(IN) :: c_Ca, dt
+      REAL(KIND=RKIND), INTENT(INOUT) :: gf
+
+      REAL(KIND=RKIND) :: dt6, gf_rk, f_rk(4)
+
+      dt6  = dt / 6._RKIND
+
+      gf_rk = gf
+      CALL TTP_ASTRN_GETF(c_Ca, gf_rk, f_rk(1))
+
+      gf_rk = gf + (0.5_RKIND*dt*f_rk(1))
+      CALL TTP_ASTRN_GETF(c_Ca, gf_rk, f_rk(2))
+
+      gf_rk = gf + (0.5_RKIND*dt*f_rk(2))
+      CALL TTP_ASTRN_GETF(c_Ca, gf_rk, f_rk(3))
+
+      gf_rk = gf + (dt*f_rk(3))
+      CALL TTP_ASTRN_GETF(c_Ca, gf_rk, f_rk(4))
+
+      gf = gf + dt6*(f_rk(1) + 2._RKIND*(f_rk(2) + f_rk(3)) + f_rk(4))
+
+      RETURN
+      END SUBROUTINE TTP_ACTVSTRN_RK
+!-----------------------------------------------------------------------
+!     Compute macroscopic fiber strain based on sacromere force-length
+!     relationship and calcium concentration using backward Euler
+      SUBROUTINE TTP_ACTVSTRN_BE(c_Ca, dt, gf, itMax, atol, rtol)
+      IMPLICIT NONE
+      INTEGER, INTENT(INOUT) :: itMax
+      REAL(KIND=RKIND), INTENT(IN) :: c_Ca, dt, atol, rtol
+      REAL(KIND=RKIND), INTENT(OUT) :: gf
+
+      INTEGER :: k
+      LOGICAL :: l1, l2, l3
+      REAL(KIND=RKIND) :: gk, f, rK, Jac
+
+      CALL TTP_ASTRN_GETF(c_Ca, gf, f)
+
+      k  = 0
+      gk = gf
+      l1 = .FALSE.
+      l2 = .FALSE.
+      l3 = .FALSE.
+      DO
+         k = k + 1
+
+         CALL TTP_ASTRN_GETF(c_Ca, gk, f)
+         rK = gk - gf - (dt*f)
+
+         l1   = k .GT. itMax
+         l2   = ABS(rK) .LE. atol
+         l3   = ABS(rK/gk) .LE. rtol
+         IF (l1 .OR. l2 .OR. l3) EXIT
+
+         CALL TTP_ASTRN_GETJ(c_Ca, gk, Jac)
+         Jac = 1._RKIND - dt*Jac
+
+         gk  = gk - rK/(Jac + eps)
+      END DO
+      gf = gk
+
+      IF (l1 .AND. .NOT.(l2) .AND. .NOT.(l3)) THEN
+         WRITE(*,'(4X,A)') "Warning: Newton-Raphson failed to "//
+     2      "converge (backward Euler)"
+      END IF
+
+      RETURN
+      END SUBROUTINE TTP_ACTVSTRN_BE
+!-----------------------------------------------------------------------
+      SUBROUTINE TTP_ASTRN_GETF(c_Ca, gf, f)
+      IMPLICIT NONE
+      REAL(KIND=RKIND), INTENT(IN) :: c_Ca, gf
+      REAL(KIND=RKIND), INTENT(OUT) :: f
+
+c      INTEGER (KIND=IKIND) i, j
+      REAL(KIND=RKIND) :: I4f, SL, RFL, mui, F_a
+c      REAL(KIND=RKIND) :: m1, ts
+
+      I4f = (1._RKIND + gf)**2
+      SL  = SQRT(I4f) * SL0
+
+      RFL = 0._RKIND
+      IF (SL.GE.SLmin .AND. SL.LE.SLmax) THEN
+         RFL = 0.5_RKIND*f0
+     2       + fc1*COS(SL) + fc2*COS(2._RKIND*SL) + fc3*COS(3._RKIND*SL)
+     3       + fs1*SIN(SL) + fs2*SIN(2._RKIND*SL) + fs3*SIN(3._RKIND*SL)
+      END IF
+      F_a  = alfa * RFL * (c_Ca - c_Ca0)**2
+
+      mui  = 1._RKIND/(mu_Ca * c_Ca * c_Ca)
+      f    = mui * (F_a - 2._RKIND*gf/(1._RKIND + gf))
+
+c      ts = 0._RKIND
+c      DO i=1, 5
+c         j  = (i+1)*(i+2)
+c         m1 = (-1._RKIND)**REAL(i,KIND=RKIND)
+c         ts = ts + m1*REAL(j,KIND=RKIND)*(gf**REAL(i,KIND=RKIND))
+c      END DO
+c      f = mui * (F_a + I4f*ts)
+
+      RETURN
+      END SUBROUTINE TTP_ASTRN_GETF
+!-----------------------------------------------------------------------
+      SUBROUTINE TTP_ASTRN_GETJ(c_Ca, gf, Jac)
+      IMPLICIT NONE
+      REAL(KIND=RKIND), INTENT(IN) :: c_Ca, gf
+      REAL(KIND=RKIND), INTENT(OUT) :: Jac
+
+c      INTEGER (KIND=IKIND) i, j, k
+      REAL(KIND=RKIND) :: I4f, SL, dRFL, dFa, mui
+c      REAL(KIND=RKIND) :: m1, ts, dts
+
+      I4f = (1._RKIND + gf)**2
+      SL  = SQRT(I4f) * SL0
+
+      dRFL = 0._RKIND
+      IF (SL.GE.SLmin .AND. SL.LE.SLmax) THEN
+         dRFL = SL0 *  (fs1*COS(SL) - fc1*SIN(SL)
+     2      + 2._RKIND*(fs2*COS(2._RKIND*SL) - fc2*SIN(2._RKIND*SL))
+     3      + 3._RKIND*(fs3*COS(3._RKIND*SL) - fc3*SIN(3._RKIND*SL)))
+      END IF
+      dFa = alfa * dRFL * (c_Ca - c_Ca0)**2
+
+      mui  = 1._RKIND/(mu_Ca * c_Ca * c_Ca)
+      Jac  = mui * (dFa - 2._RKIND/I4f)
+
+c      ts  = 0._RKIND
+c      dts = 0._RKIND
+c      DO i=1, 5
+c         j   = (i+1)*(i+2)
+c         k   = i*j
+c         m1  = (-1._RKIND)**REAL(i,KIND=RKIND)
+c         ts  = ts  + m1*REAL(j,KIND=RKIND)*(gf**REAL(i,KIND=RKIND))
+c         dts = dts + m1*REAL(k,KIND=RKIND)*(gf**REAL(i-1,KIND=RKIND))
+c      END DO
+c      Jac  = mui * (dFa + I4f*dts + 2._RKIND*SQRT(I4f)*ts)
+
+      RETURN
+      END SUBROUTINE TTP_ASTRN_GETJ
+!-----------------------------------------------------------------------
+      SUBROUTINE GETRVAL(fileId, skwrd, rVal)
+      IMPLICIT NONE
+      INTEGER(KIND=IKIND), INTENT(IN) :: fileId
+      CHARACTER(LEN=*), INTENT(IN) :: skwrd
+      REAL(KIND=RKIND), INTENT(INOUT) :: rVal
+
+      INTEGER(KIND=IKIND) :: slen, i, ios
+      CHARACTER(LEN=stdL) :: sline, scmd, sval
+
+      REWIND(fileId)
+      slen = LEN(TRIM(skwrd))
+      DO
+         READ(fileId,'(A)',END=001) sline
+         sline = ADJUSTC(sline)
+         slen  = LEN(TRIM(sline))
+         IF (sline(1:1).EQ.'#' .OR. slen.EQ.0) CYCLE
+
+         DO i=1, slen
+            IF (sline(i:i) .EQ. ':') EXIT
+         END DO
+
+         IF (i .GE. slen) THEN
+            STOP "Error: inconsistent input file format"
+         END IF
+
+         scmd = sline(1:i-1)
+         sval = sline(i+1:slen)
+         sval = ADJUSTC(sval)
+
+!        Remove any trailing comments
+         slen = LEN(TRIM(sval))
+         DO i=1, slen
+            IF (sval(i:i) .EQ. '#') EXIT
+         END DO
+         sval = TRIM(ADJUSTC(sval(1:i-1)))
+
+         IF (TRIM(skwrd) .EQ. TRIM(scmd)) THEN
+            READ(sval,*,IOSTAT=ios) rval
+            IF (ios .NE. 0) THEN
+               STOP " Error: while reading "//TRIM(skwrd)
+            END IF
+            EXIT
+         END IF
+      END DO
+
+ 001  RETURN
+
+! 001  STOP " Error: EOF reached while finding command <"//
+!     2   TRIM(skwrd)//">"
+
+      END SUBROUTINE GETRVAL
+!-----------------------------------------------------------------------
+      SUBROUTINE GETRVEC(fileId, skwrd, nd, rVec)
+      IMPLICIT NONE
+      INTEGER(KIND=IKIND), INTENT(IN) :: fileId, nd
+      CHARACTER(LEN=*), INTENT(IN) :: skwrd
+      REAL(KIND=RKIND), INTENT(INOUT) :: rVec(nd)
+
+      INTEGER(KIND=IKIND) :: slen, i, ios, nt
+      CHARACTER(LEN=stdL) :: sline, scmd, sval
+      CHARACTER(LEN=stdL), DIMENSION(1024) :: tokList
+
+      REWIND(fileId)
+      slen = LEN(TRIM(skwrd))
+      DO
+         READ(fileId,'(A)',END=001) sline
+         sline = ADJUSTC(sline)
+         slen  = LEN(TRIM(sline))
+         IF (sline(1:1).EQ.'#' .OR. slen.EQ.0) CYCLE
+
+         DO i=1, slen
+            IF (sline(i:i) .EQ. ':') EXIT
+         END DO
+
+         IF (i .GE. slen) THEN
+            STOP "Error: inconsistent input file format"
+         END IF
+
+         scmd = sline(1:i-1)
+         sval = sline(i+1:slen)
+         sval = ADJUSTC(sval)
+
+!        Remove any trailing comments
+         slen = LEN(TRIM(sval))
+         DO i=1, slen
+            IF (sval(i:i) .EQ. '#') EXIT
+         END DO
+         sval = TRIM(ADJUSTC(sval(1:i-1)))
+
+         IF (TRIM(skwrd) .EQ. TRIM(scmd)) THEN
+            CALL PARSESTR(sval, tokList, nt)
+            IF (nt .NE. nd) THEN
+               DO i=1, nt
+                  WRITE(*,'(I2,2X,A)') i, TRIM(tokList(i))
+               END DO
+               STOP " Error: Unexpected token length "//TRIM(skwrd)
+            END IF
+
+            DO i=1, nt
+               READ(tokList(i),*,IOSTAT=ios) rvec(i)
+               IF (ios .NE. 0) THEN
+                  STOP " Error: while reading "//TRIM(skwrd)
+               END IF
+            END DO
+            EXIT
+         END IF
+      END DO
+
+ 001  RETURN
+
+! 001  STOP " Error: EOF reached while finding command <"//
+!     2   TRIM(skwrd)//">"
+
+      END SUBROUTINE GETRVEC
+!-----------------------------------------------------------------------
+!     Removes any leading spaces or tabs
+      PURE FUNCTION ADJUSTC(str)
+      IMPLICIT NONE
+      CHARACTER(LEN=*), INTENT(IN) :: str
+      CHARACTER(LEN=LEN(str)) ADJUSTC
+
+      INTEGER(KIND=IKIND) i
+
+      DO i=1, LEN(str)
+         IF (str(i:i) .NE. " " .AND. str(i:i) .NE. "  ") EXIT
+      END DO
+      IF (i .GT. LEN(str)) THEN
+         ADJUSTC = ""
+      ELSE
+         ADJUSTC = str(i:)
+      END IF
+
+      RETURN
+      END FUNCTION ADJUSTC
+!-----------------------------------------------------------------------
+      SUBROUTINE PARSESTR(strng, toks, ntoks)
+      IMPLICIT NONE
+      CHARACTER(LEN=*), INTENT(IN) :: strng
+      CHARACTER(LEN=*), DIMENSION(1024), INTENT(OUT) :: toks
+      INTEGER(KIND=IKIND), INTENT(OUT) :: ntoks
+
+      INTEGER(KIND=IKIND) :: i, j, slen
+      CHARACTER(LEN=stdL) :: dlmtr, token
+
+      dlmtr = ''
+      token = ''
+
+      dlmtr = '< (,=")>'
+      ntoks = 1
+      slen  = LEN(TRIM(strng))
+
+      ntoks = 0
+      i = 0
+      DO WHILE (i .LT. slen)
+         i = i + 1
+         IF (INDEX(dlmtr,strng(i:i)) .NE. 0) CYCLE
+         DO j=i+1, slen
+            IF (INDEX(dlmtr,strng(j:j)) .NE. 0) EXIT
+         END DO
+         IF (j .LE. slen) THEN
+            ntoks = ntoks + 1
+            toks(ntoks) = strng(i:j-1)
+            i = j-1
+         ELSE
+            EXIT
+         END IF
+      END DO
+
+      RETURN
+      END SUBROUTINE PARSESTR
 !-----------------------------------------------------------------------
       END MODULE TTPMOD
 !#######################################################################

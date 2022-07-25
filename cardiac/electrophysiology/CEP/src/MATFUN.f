@@ -1,34 +1,3 @@
-!
-! Copyright (c) Stanford University, The Regents of the University of
-!               California, and others.
-!
-! All Rights Reserved.
-!
-! See Copyright-SimVascular.txt for additional details.
-!
-! Permission is hereby granted, free of charge, to any person obtaining
-! a copy of this software and associated documentation files (the
-! "Software"), to deal in the Software without restriction, including
-! without limitation the rights to use, copy, modify, merge, publish,
-! distribute, sublicense, and/or sell copies of the Software, and to
-! permit persons to whom the Software is furnished to do so, subject
-! to the following conditions:
-!
-! The above copyright notice and this permission notice shall be included
-! in all copies or substantial portions of the Software.
-!
-! THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
-! IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
-! TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-! PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
-! OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-! EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-! PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-! PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-! LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-! NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-!
 !--------------------------------------------------------------------
 !
 !     This module defines generally performed matrix and tensor
@@ -38,9 +7,10 @@
 
 !     Matrix and tensor operations
       MODULE MATFUN
+      USE TYPEMOD
       IMPLICIT NONE
 
-      INTEGER, ALLOCATABLE :: t_ind(:,:)
+      INTEGER(KIND=IKIND), ALLOCATABLE :: t_ind(:,:)
 
       PRIVATE :: ISZERO
 
@@ -53,14 +23,14 @@
 !     Create a second order identity matrix of rank nd
       FUNCTION MAT_ID(nd) RESULT(A)
       IMPLICIT NONE
-      INTEGER, INTENT(IN) :: nd
-      REAL(KIND=8) :: A(nd,nd)
+      INTEGER(KIND=IKIND), INTENT(IN) :: nd
+      REAL(KIND=RKIND) :: A(nd,nd)
 
-      INTEGER :: i
+      INTEGER(KIND=IKIND) :: i
 
-      A = 0D0
+      A = 0._RKIND
       DO i=1, nd
-         A(i,i) = 1D0
+         A(i,i) = 1._RKIND
       END DO
 
       RETURN
@@ -69,13 +39,13 @@
 !     Trace of second order matrix of rank nd
       FUNCTION MAT_TRACE(A, nd) RESULT(trA)
       IMPLICIT NONE
-      INTEGER, INTENT(IN) :: nd
-      REAL(KIND=8), INTENT(IN) :: A(nd,nd)
-      REAL(KIND=8) :: trA
+      INTEGER(KIND=IKIND), INTENT(IN) :: nd
+      REAL(KIND=RKIND), INTENT(IN) :: A(nd,nd)
+      REAL(KIND=RKIND) :: trA
 
-      INTEGER :: i
+      INTEGER(KIND=IKIND) :: i
 
-      trA = 0D0
+      trA = 0._RKIND
       DO i=1, nd
          trA = trA + A(i,i)
       END DO
@@ -83,14 +53,48 @@
       RETURN
       END FUNCTION MAT_TRACE
 !--------------------------------------------------------------------
+!     Symmetric part of a matrix, S = (A + A.T)/2
+      FUNCTION MAT_SYMM(A, nd) RESULT(S)
+      IMPLICIT NONE
+      INTEGER(KIND=IKIND), INTENT(IN) :: nd
+      REAL(KIND=RKIND), INTENT(IN) :: A(nd,nd)
+      REAL(KIND=RKIND) :: S(nd,nd)
+
+      INTEGER(KIND=IKIND) :: i, j
+
+      S = 0._RKIND
+      DO i=1, nd
+         DO j=1, nd
+            S(i,j) = 0.5_RKIND*(A(i,j) + A(j,i))
+         END DO
+      END DO
+
+      RETURN
+      END FUNCTION MAT_SYMM
+!--------------------------------------------------------------------
+!     Deviatoric part of a matrix, D = A - (tr.(A)/nd) I
+      FUNCTION MAT_DEV(A, nd) RESULT(D)
+      IMPLICIT NONE
+      INTEGER(KIND=IKIND), INTENT(IN) :: nd
+      REAL(KIND=RKIND), INTENT(IN) :: A(nd,nd)
+      REAL(KIND=RKIND) :: D(nd,nd)
+
+      INTEGER(KIND=IKIND) :: trA
+
+      trA = MAT_TRACE(A,nd)
+      D   = A - (trA/REAL(nd,KIND=RKIND)) * MAT_ID(nd)
+
+      RETURN
+      END FUNCTION MAT_DEV
+!--------------------------------------------------------------------
 !     Create a matrix from outer product of two vectors
       FUNCTION MAT_DYADPROD(u, v, nd) RESULT(A)
       IMPLICIT NONE
-      INTEGER, INTENT(IN) :: nd
-      REAL(KIND=8), INTENT(IN) :: u(nd), v(nd)
-      REAL(KIND=8) :: A(nd,nd)
+      INTEGER(KIND=IKIND), INTENT(IN) :: nd
+      REAL(KIND=RKIND), INTENT(IN) :: u(nd), v(nd)
+      REAL(KIND=RKIND) :: A(nd,nd)
 
-      INTEGER :: i, j
+      INTEGER(KIND=IKIND) :: i, j
 
       DO j=1, nd
          DO i=1, nd
@@ -104,15 +108,15 @@
 !     Create a matrix from symmetric product of two vectors
       FUNCTION MAT_SYMMPROD(u, v, nd) RESULT(A)
       IMPLICIT NONE
-      INTEGER, INTENT(IN) :: nd
-      REAL(KIND=8), INTENT(IN) :: u(nd), v(nd)
-      REAL(KIND=8) :: A(nd,nd)
+      INTEGER(KIND=IKIND), INTENT(IN) :: nd
+      REAL(KIND=RKIND), INTENT(IN) :: u(nd), v(nd)
+      REAL(KIND=RKIND) :: A(nd,nd)
 
-      INTEGER :: i, j
+      INTEGER(KIND=IKIND) :: i, j
 
       DO j=1, nd
          DO i=1, nd
-            A(i,j) = 5D-1*(u(i)*v(j) + u(j)*v(i))
+            A(i,j) = 0.5_RKIND*(u(i)*v(j) + u(j)*v(i))
          END DO
       END DO
 
@@ -122,14 +126,13 @@
 !     Double dot product of 2 square matrices
       FUNCTION MAT_DDOT(A, B, nd) RESULT(s)
       IMPLICIT NONE
+      INTEGER(KIND=IKIND), INTENT(IN) :: nd
+      REAL(KIND=RKIND), INTENT(IN) :: A(nd,nd), B(nd,nd)
+      REAL(KIND=RKIND) :: s
 
-      INTEGER, INTENT(IN) :: nd
-      REAL(KIND=8), INTENT(IN) :: A(nd,nd), B(nd,nd)
-      REAL(KIND=8) :: s
+      INTEGER(KIND=IKIND) :: i, j
 
-      INTEGER :: i, j
-
-      s = 0D0
+      s = 0._RKIND
       DO j=1, nd
          DO i=1, nd
             s = s + A(i,j) * B(i,j)
@@ -142,13 +145,13 @@
 !     Computes the determinant of a square matrix
       RECURSIVE FUNCTION MAT_DET(A, nd) RESULT(D)
       IMPLICIT NONE
-      INTEGER, INTENT(IN) :: nd
-      REAL(KIND=8), INTENT(IN) :: A(nd,nd)
+      INTEGER(KIND=IKIND), INTENT(IN) :: nd
+      REAL(KIND=RKIND), INTENT(IN) :: A(nd,nd)
 
-      INTEGER :: i, j, n
-      REAL(KIND=8) :: D, Am(nd-1,nd-1)
+      INTEGER(KIND=IKIND) :: i, j, n
+      REAL(KIND=RKIND) :: D, Am(nd-1,nd-1)
 
-      D = 0D0
+      D = 0._RKIND
       IF (nd .EQ. 2) THEN
          D = A(1,1)*A(2,2) - A(1,2)*A(2,1)
       ELSE
@@ -162,7 +165,7 @@
                   Am(:,n) = A(2:nd,j)
                END IF
             END DO ! j
-            D = D + ( (-1D0)**REAL(1+i,KIND=8) * A(1,i) *
+            D = D + ( (-1._RKIND)**REAL(1+i, KIND=RKIND) * A(1,i) *
      2                 MAT_DET(Am,nd-1) )
          END DO ! i
       END IF ! nd.EQ.2
@@ -174,24 +177,26 @@
 !     square matrix, A of dimension nd
       FUNCTION MAT_EIG(A, nd)
       IMPLICIT NONE
-      INTEGER, INTENT(IN) :: nd
-      REAL(KIND=8), INTENT(IN) :: A(nd,nd)
-      COMPLEX*16 :: Amat(nd,nd), MAT_EIG(nd), b(nd), DUMMY(1,1),
-     2   WORK(2*nd)
+      INTEGER(KIND=IKIND), INTENT(IN) :: nd
+      REAL(KIND=RKIND), INTENT(IN) :: A(nd,nd)
+      COMPLEX(KIND=CXKIND) :: Amat(nd,nd), MAT_EIG(nd), b(nd),
+     2   DUMMY(1,1), WORK(2*nd)
 
-      INTEGER :: i, j, iok
+      INTEGER(KIND=IKIND) :: i, j, iok
 
-      Amat = (0D0, 0D0)
+      Amat = (0._RKIND, 0._RKIND)
       DO j=1, nd
          DO i=1, nd
-            Amat(i,j) = CMPLX(A(i,j))
+            Amat(i,j) = CMPLX(A(i,j), 0._RKIND, KIND=CXKIND)
          END DO
       END DO
 
       CALL ZGEEV('N', 'N', nd, Amat, nd, b, DUMMY, 1, DUMMY, 1, WORK,
      2   2*nd, WORK, iok)
       IF (iok .NE. 0) THEN
-         STOP "Failed to compute eigen values"
+         WRITE(*,'(A)') "Failed to compute eigen values"
+         CALL FINALIZE()
+         STOP
       ELSE
          MAT_EIG(:) = b(:)
       END IF
@@ -202,14 +207,14 @@
 !     This function computes inverse of a square matrix
       FUNCTION MAT_INV(A, nd) RESULT(Ainv)
       IMPLICIT NONE
-      INTEGER, INTENT(IN) :: nd
-      REAL(KIND=8), INTENT(IN) :: A(nd,nd)
-      REAL(KIND=8) :: Ainv(nd,nd)
+      INTEGER(KIND=IKIND), INTENT(IN) :: nd
+      REAL(KIND=RKIND), INTENT(IN) :: A(nd,nd)
+      REAL(KIND=RKIND) :: Ainv(nd,nd)
 
-      REAL(KIND=8), PARAMETER :: epsil = EPSILON(epsil)
+      REAL(KIND=RKIND), PARAMETER :: epsil = EPSILON(epsil)
 
-      INTEGER :: iok = 0
-      REAL(KIND=8) :: d
+      INTEGER(KIND=IKIND) :: iok = 0
+      REAL(KIND=RKIND) :: d
 
       IF (nd .EQ. 2) THEN
          d = MAT_DET(A, nd)
@@ -250,6 +255,7 @@
       IF (iok .ne. 0) THEN
          WRITE(*,'(A)') "Singular matrix detected to compute inverse"
          WRITE(*,'(A)') "ERROR: Matrix inversion failed"
+         CALL FINALIZE()
          STOP
       END IF
 
@@ -260,20 +266,20 @@
 !     Gauss Elimination method
       FUNCTION MAT_INV_GE(A, nd) RESULT(Ainv)
       IMPLICIT NONE
-      INTEGER, INTENT(IN) :: nd
-      REAL(KIND=8), INTENT(IN) :: A(nd,nd)
-      REAL(KIND=8) :: Ainv(nd,nd)
+      INTEGER(KIND=IKIND), INTENT(IN) :: nd
+      REAL(KIND=RKIND), INTENT(IN) :: A(nd,nd)
+      REAL(KIND=RKIND) :: Ainv(nd,nd)
 
-      INTEGER :: i, j, k
-      REAL(KIND=8) :: d, B(nd,2*nd)
+      INTEGER(KIND=IKIND) :: i, j, k
+      REAL(KIND=RKIND) :: d, B(nd,2*nd)
 
 !     Auxillary matrix
-      B = 0D0
+      B = 0._RKIND
       DO i=1, nd
          DO j=1, nd
             B(i,j) = A(i,j)
          END DO
-         B(i,nd+i) = 1D0
+         B(i,nd+i) = 1._RKIND
       END DO
 
 !     Pivoting
@@ -321,23 +327,28 @@
 !     Lapack functions (DGETRF + DGETRI)
       FUNCTION MAT_INV_LP(A, nd) RESULT(Ainv)
       IMPLICIT NONE
-      INTEGER, INTENT(IN) :: nd
-      REAL(KIND=8), INTENT(IN) :: A(nd, nd)
-      REAL(KIND=8) :: Ainv(nd,nd)
+      INTEGER(KIND=IKIND), INTENT(IN) :: nd
+      REAL(KIND=RKIND), INTENT(IN) :: A(nd, nd)
+      REAL(KIND=RKIND) :: Ainv(nd,nd)
 
-      INTEGER iok, IPIV(nd)
-      REAL(KIND=8) :: Ad(nd,nd), WORK(2*nd)
+      INTEGER(KIND=IKIND) iok, IPIV(nd)
+      REAL(KIND=RKIND) :: Ad(nd,nd), WORK(2*nd)
 
       Ad = A
       CALL DGETRF(nd, nd, Ad, nd, IPIV, iok)
       IF (iok .NE. 0) THEN
          WRITE(*,'(A)') "Singular matrix detected to compute inverse"
          WRITE(*,'(A)') "ERROR: Matrix inversion failed"
+         CALL FINALIZE()
          STOP
       END IF
 
       CALL DGETRI(nd, Ad, nd, IPIV, WORK, 2*nd, iok)
-      IF (iok .NE. 0) STOP "ERROR: Matrix inversion failed (LAPACK)"
+      IF (iok .NE. 0) THEN
+         WRITE(*,'(A)') "ERROR: Matrix inversion failed (LAPACK)"
+         CALL FINALIZE()
+         STOP
+      END IF
 
       Ainv(:,:) = Ad(:,:)
 
@@ -347,9 +358,13 @@
 !     Initialize tensor index pointer
       SUBROUTINE TEN_INIT(nd)
       IMPLICIT NONE
-      INTEGER, INTENT(IN) :: nd
+      INTEGER(KIND=IKIND), INTENT(IN) :: nd
 
-      INTEGER :: ii, nn, i, j, k, l
+      INTEGER(KIND=IKIND) :: ii, nn, i, j, k, l
+
+      IF (nd.NE.2 .AND. nd.NE.3) THEN
+         RETURN
+      END IF
 
       nn = nd**4
       IF (ALLOCATED(t_ind)) DEALLOCATE(t_ind)
@@ -376,16 +391,16 @@
 !     Create a 4th order order symmetric identity tensor
       FUNCTION TEN_IDs(nd) RESULT(A)
       IMPLICIT NONE
-      INTEGER, INTENT(IN) :: nd
-      REAL(KIND=8) :: A(nd,nd,nd,nd)
+      INTEGER(KIND=IKIND), INTENT(IN) :: nd
+      REAL(KIND=RKIND) :: A(nd,nd,nd,nd)
 
-      INTEGER :: i, j
+      INTEGER(KIND=IKIND) :: i, j
 
-      A = 0D0
+      A = 0._RKIND
       DO j=1, nd
          DO i=1, nd
-            A(i,j,i,j) = A(i,j,i,j) + 5D-1
-            A(i,j,j,i) = A(i,j,j,i) + 5D-1
+            A(i,j,i,j) = A(i,j,i,j) + 0.5_RKIND
+            A(i,j,j,i) = A(i,j,j,i) + 0.5_RKIND
          END DO
       END DO
 
@@ -395,11 +410,11 @@
 !     Create a 4th order tensor from outer product of two matrices
       FUNCTION TEN_DYADPROD(A, B, nd) RESULT(C)
       IMPLICIT NONE
-      INTEGER, INTENT(IN) :: nd
-      REAL(KIND=8), INTENT(IN) :: A(nd,nd), B(nd,nd)
-      REAL(KIND=8) :: C(nd,nd,nd,nd)
+      INTEGER(KIND=IKIND), INTENT(IN) :: nd
+      REAL(KIND=RKIND), INTENT(IN) :: A(nd,nd), B(nd,nd)
+      REAL(KIND=RKIND) :: C(nd,nd,nd,nd)
 
-      INTEGER :: ii, nn, i, j, k, l
+      INTEGER(KIND=IKIND) :: ii, nn, i, j, k, l
 
       nn = nd**4
       DO ii=1, nn
@@ -417,11 +432,11 @@
 !     matrices
       FUNCTION TEN_SYMMPROD(A, B, nd) RESULT(C)
       IMPLICIT NONE
-      INTEGER, INTENT(IN) :: nd
-      REAL(KIND=8), INTENT(IN) :: A(nd,nd), B(nd,nd)
-      REAL(KIND=8) :: C(nd,nd,nd,nd)
+      INTEGER(KIND=IKIND), INTENT(IN) :: nd
+      REAL(KIND=RKIND), INTENT(IN) :: A(nd,nd), B(nd,nd)
+      REAL(KIND=RKIND) :: C(nd,nd,nd,nd)
 
-      INTEGER :: ii, nn, i, j, k, l
+      INTEGER(KIND=IKIND) :: ii, nn, i, j, k, l
 
       nn = nd**4
       DO ii=1, nn
@@ -429,7 +444,7 @@
          j = t_ind(2,ii)
          k = t_ind(3,ii)
          l = t_ind(4,ii)
-         C(i,j,k,l) = 5D-1 * ( A(i,k)*B(j,l) + A(i,l)*B(j,k) )
+         C(i,j,k,l) = 0.5_RKIND * ( A(i,k)*B(j,l) + A(i,l)*B(j,k) )
       END DO
 
       RETURN
@@ -438,11 +453,11 @@
 !     Transpose of a 4th order tensor [A^T]_ijkl = [A]_klij
       FUNCTION TEN_TRANSPOSE(A, nd) RESULT(B)
       IMPLICIT NONE
-      INTEGER, INTENT(IN) :: nd
-      REAL(KIND=8), INTENT(IN) :: A(nd,nd,nd,nd)
-      REAL(KIND=8) :: B(nd,nd,nd,nd)
+      INTEGER(KIND=IKIND), INTENT(IN) :: nd
+      REAL(KIND=RKIND), INTENT(IN) :: A(nd,nd,nd,nd)
+      REAL(KIND=RKIND) :: B(nd,nd,nd,nd)
 
-      INTEGER :: ii, nn, i, j, k, l
+      INTEGER(KIND=IKIND) :: ii, nn, i, j, k, l
 
       nn = nd**4
       DO ii=1, nn
@@ -460,11 +475,11 @@
 !     C_ij = (A_ijkl * B_kl)
       FUNCTION TEN_MDDOT(A, B, nd) RESULT(C)
       IMPLICIT NONE
-      INTEGER, INTENT(IN) :: nd
-      REAL(KIND=8), INTENT(IN) :: A(nd,nd,nd,nd), B(nd,nd)
-      REAL(KIND=8) :: C(nd,nd)
+      INTEGER(KIND=IKIND), INTENT(IN) :: nd
+      REAL(KIND=RKIND), INTENT(IN) :: A(nd,nd,nd,nd), B(nd,nd)
+      REAL(KIND=RKIND) :: C(nd,nd)
 
-      INTEGER :: i, j
+      INTEGER(KIND=IKIND) :: i, j
 
       IF (nd .EQ. 2) THEN
          DO i=1, nd
@@ -492,13 +507,13 @@
 !     T_ijkl = A_ijmn * B_klmn
       FUNCTION TEN_DDOT_3434(A, B, nd) RESULT(C)
       IMPLICIT NONE
-      INTEGER, INTENT(IN) :: nd
-      REAL(KIND=8), INTENT(IN) :: A(nd,nd,nd,nd), B(nd,nd,nd,nd)
-      REAL(KIND=8) :: C(nd,nd,nd,nd)
+      INTEGER(KIND=IKIND), INTENT(IN) :: nd
+      REAL(KIND=RKIND), INTENT(IN) :: A(nd,nd,nd,nd), B(nd,nd,nd,nd)
+      REAL(KIND=RKIND) :: C(nd,nd,nd,nd)
 
-      INTEGER :: ii, nn, i, j, k, l
+      INTEGER(KIND=IKIND) :: ii, nn, i, j, k, l
 
-      C  = 0D0
+      C  = 0._RKIND
       nn = nd**4
       IF (nd .EQ. 2) THEN
          DO ii=1, nn
@@ -535,13 +550,13 @@
 !     T_ijkl = A_ijmn * B_kmln
       FUNCTION TEN_DDOT_3424(A, B, nd) RESULT(C)
       IMPLICIT NONE
-      INTEGER, INTENT(IN) :: nd
-      REAL(KIND=8), INTENT(IN) :: A(nd,nd,nd,nd), B(nd,nd,nd,nd)
-      REAL(KIND=8) :: C(nd,nd,nd,nd)
+      INTEGER(KIND=IKIND), INTENT(IN) :: nd
+      REAL(KIND=RKIND), INTENT(IN) :: A(nd,nd,nd,nd), B(nd,nd,nd,nd)
+      REAL(KIND=RKIND) :: C(nd,nd,nd,nd)
 
-      INTEGER :: ii, nn, i, j, k, l
+      INTEGER(KIND=IKIND) :: ii, nn, i, j, k, l
 
-      C  = 0D0
+      C  = 0._RKIND
       nn = nd**4
       IF (nd .EQ. 2) THEN
          DO ii=1, nn
@@ -578,13 +593,13 @@
 !     T_ijkl = A_imjn * B_mnkl
       FUNCTION TEN_DDOT_2412(A, B, nd) RESULT(C)
       IMPLICIT NONE
-      INTEGER, INTENT(IN) :: nd
-      REAL(KIND=8), INTENT(IN) :: A(nd,nd,nd,nd), B(nd,nd,nd,nd)
-      REAL(KIND=8) :: C(nd,nd,nd,nd)
+      INTEGER(KIND=IKIND), INTENT(IN) :: nd
+      REAL(KIND=RKIND), INTENT(IN) :: A(nd,nd,nd,nd), B(nd,nd,nd,nd)
+      REAL(KIND=RKIND) :: C(nd,nd,nd,nd)
 
-      INTEGER :: ii, nn, i, j, k, l
+      INTEGER(KIND=IKIND) :: ii, nn, i, j, k, l
 
-      C  = 0D0
+      C  = 0._RKIND
       nn = nd**4
       IF (nd .EQ. 2) THEN
          DO ii=1, nn
@@ -620,18 +635,18 @@
 !--------------------------------------------------------------------
       FUNCTION ISZERO(ia)
       IMPLICIT NONE
-      REAL(KIND=8), INTENT(IN) :: ia
+      REAL(KIND=RKIND), INTENT(IN) :: ia
       LOGICAL ISZERO
 
-      REAL(KIND=8), PARAMETER :: epsil = EPSILON(epsil)
-      REAL(KIND=8) a, b, nrm
+      REAL(KIND=RKIND), PARAMETER :: epsil = EPSILON(epsil)
+      REAL(KIND=RKIND) a, b, nrm
 
       a   = ABS(ia)
-      b   = 0D0
+      b   = 0._RKIND
       nrm = MAX(a,epsil)
 
       ISZERO = .FALSE.
-      IF ((a-b)/nrm .LT. 1D1*epsil) ISZERO = .TRUE.
+      IF ((a-b)/nrm .LT. 10._RKIND*epsil) ISZERO = .TRUE.
 
       RETURN
       END FUNCTION ISZERO
