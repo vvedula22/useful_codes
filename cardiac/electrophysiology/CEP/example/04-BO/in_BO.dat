@@ -1,0 +1,20 @@
+#CEP Model (AP, FN, TTP, BO)
+BO
+#Myocardium zone (1-epi; 2-endo; 3-mid-myo)
+1
+#Time integrator (FE, RK4, CN2)
+FE
+#Cycle length (ms)
+1000.0
+#No time steps
+10000
+#Time increment (ms)
+0.1
+#Stimulus start time (ms)
+50.0
+#Stimulus duration (ms)
+1.0
+#Stimulus amplitude
+52.0
+#Electromechanics coupling
+0

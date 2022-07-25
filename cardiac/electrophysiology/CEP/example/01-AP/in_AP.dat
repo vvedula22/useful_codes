@@ -1,0 +1,18 @@
+#CEP Model (AP, FN, TTP)
+AP
+#Time integrator (FE, RK4, CN2)
+RK4
+#No time steps
+5000
+#Time increment
+0.2
+#Stimulus start time
+400.0
+#Stimulus duration
+0.2
+#Stimulus period
+1000.0
+#Stimulus amplitude
+100.0
+#Electromechanics coupling
+1
