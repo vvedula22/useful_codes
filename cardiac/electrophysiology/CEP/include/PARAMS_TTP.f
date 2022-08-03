@@ -1,37 +1,35 @@
-!
-! Copyright (c) Stanford University, The Regents of the University of
-!               California, and others.
-!
-! All Rights Reserved.
-!
-! See Copyright-SimVascular.txt for additional details.
-!
-! Permission is hereby granted, free of charge, to any person obtaining
-! a copy of this software and associated documentation files (the
-! "Software"), to deal in the Software without restriction, including
-! without limitation the rights to use, copy, modify, merge, publish,
-! distribute, sublicense, and/or sell copies of the Software, and to
-! permit persons to whom the Software is furnished to do so, subject
-! to the following conditions:
-!
-! The above copyright notice and this permission notice shall be included
-! in all copies or substantial portions of the Software.
-!
-! THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
-! IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
-! TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-! PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
-! OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-! EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-! PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-! PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-! LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-! NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-!
 !--------------------------------------------------------------------
 !
-!     Constants for TenTusscher-Panfilov Ventricular Myocyte Model.
+!     Parameters for TenTusscher-Panfilov Ventricular Myocyte Model.
+!     Parameters are chosen based on below references:
+!
+!     Reference for tenTusscher-Panfilov electrophysiology model:
+!        ten Tusscher, et al. (2004). A model for human ventricular
+!        tissue. American Journal of Physiology - Heart and Circulatory
+!        Physiology, 286(4), H1573–H1589.
+!
+!        ten Tusscher, K. H. W. J., & Panfilov, A. V. (2006).
+!        Alternans and spiral breakup in a human ventricular tissue
+!        model. American Journal of Physiology. Heart and Circulatory
+!        Physiology, 291(3), H1088–H1100.
+!        https://doi.org/10.1152/ajpheart.00109.2006
+!
+!     References for active stress/active strain models:
+!        Garcia-blanco, E., et al. (2019). A new computational framework
+!        for electro-activation in cardiac mechanics. Computer Methods
+!        in Applied Mechanics and Engineering.
+!        https://doi.org/10.1016/j.cma.2019.01.042
+!
+!        Wong, J., Goketepe, S., & Kuhl, E. (2013). Computational
+!        modeling of chemo-electro-mechanical coupling: A novel implicit
+!        monolithic finite element approach. International Journal for
+!        Numerical Methods in Biomedical Engineering, 29, 1104–1133.
+!        https://doi.org/10.1002/cnm.2565
+!
+!        Simone Rossi, et al. (2012). Orthotropic active strain models
+!        for the numerical simulation of cardiac biomechanics.
+!        International Journal for Numerical Methods in Biomedical
+!        Engineering, 28, 761–788. https://doi.org/10.1002/cnm.2473
 !
 !--------------------------------------------------------------------
 

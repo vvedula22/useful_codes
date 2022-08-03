@@ -1,6 +1,19 @@
 !--------------------------------------------------------------------
 !
-!     Parameters used for Aliev-Panfilov Ventricular Myocyte Model.
+!     Parameters for Aliev-Panfilov cellular activation model.
+!     Parameters are chosen based on below references.
+!
+!     Reference for Aliev-Panfilov electrophysiology model:
+!        Goktepe, S., & Kuhl, E. (2009). Computational modeling of
+!        cardiac electrophysiology: A novel finite element approach.
+!        Int. J. Numer. Meth. Engng, 79, 156–178.
+!        https://doi.org/10.1002/nme
+!
+!     Reference for active stress model:
+!        Goktepe, S., & Kuhl, E. (2010). Electromechanics of the heart:
+!        A unified approach to the strongly coupled excitation-
+!        contraction problem. Computational Mechanics, 45(2–3), 227–243.
+!        https://doi.org/10.1007/s00466-009-0434-z
 !
 !--------------------------------------------------------------------
 

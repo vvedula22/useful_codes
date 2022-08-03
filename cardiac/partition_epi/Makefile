@@ -23,15 +23,12 @@ INCLUDES =
 $(MYEXEC): $(MYOBJ)
 	$(FC) $^ $(LFLAGS) -o $@
 
-$(MYOBJ): | $(OBJ_DIR) $(BIN_DIR) $(INC_DIR)
+$(MYOBJ): | $(OBJ_DIR) $(BIN_DIR)
 
 $(OBJ_DIR):
 	mkdir -p $@
 
 $(BIN_DIR):
-	mkdir -p $@
-
-$(INC_DIR):
 	mkdir -p $@
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.f90

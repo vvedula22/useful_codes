@@ -20,7 +20,7 @@
       INTEGER(KIND=IKIND) nTS
 
 !     Time step increment
-      REAL(KIND=RKIND) :: dt = 0D0
+      REAL(KIND=RKIND) :: dt = 0._RKIND
 
 !     Output log file
       CHARACTER(LEN=stdL) :: oFile

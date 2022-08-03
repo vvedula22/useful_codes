@@ -56,6 +56,11 @@ c     Load inputs from list
       lSub => list%get(ctmp, "Electrophysiology model")
       CALL TO_LOWER(ctmp)
       SELECT CASE (TRIM(ctmp))
+      CASE ("decoupled")
+         cep%cepType = cepModel_DCPLD
+         nX = 0
+         nG = 0
+
       CASE ("ap", "aliev_panfilov")
          cep%cepType = cepModel_AP
          nX = 2
@@ -170,24 +175,42 @@ c     Load inputs from list
             err = " Unknown excitation-contraction coupling"
          END SELECT
 
-         lPtr => lSub%get(ctmp, "Time integration scheme")
-         SELECT CASe (TRIM(ctmp))
-         CASE ("fe", "euler", "forward_euler", "explicit")
-            cep%ec%odeS%tIntType = tIntType_FE
+         flag = (cep%cepType.EQ.cepModel_DCPLD) .AND.
+     2          (cep%ec%astrain)
+         IF (.NOT.flag) THEN
+            lPtr => lSub%get(ctmp, "Time integration scheme")
+            SELECT CASE (TRIM(ctmp))
+            CASE ("fe", "euler", "forward_euler", "explicit")
+               cep%ec%odeS%tIntType = tIntType_FE
 
-         CASE ("rk", "rk4", "runge")
-            cep%ec%odeS%tIntType = tIntType_RK4
+            CASE ("rk", "rk4", "runge")
+               cep%ec%odeS%tIntType = tIntType_RK4
 
-         CASE ("be", "backward_euler", "implicit")
-            cep%ec%odeS%tIntType = tIntType_BE
+            CASE ("be", "backward_euler", "implicit")
+               cep%ec%odeS%tIntType = tIntType_BE
 
-         CASE ("cn", "cn2")
-            err = " Crank-Nicholson time integration cannot "//
-     2         "be used for excitation-contraction coupling"
+            CASE ("cn", "cn2")
+               err = " Crank-Nicholson time integration cannot "//
+     2            "be used for excitation-contraction coupling"
 
-         CASE DEFAULT
-            err = " Unknown ODE time integration scheme"
-         END SELECT
+            CASE DEFAULT
+               err = " Unknown ODE time integration scheme"
+            END SELECT
+         END IF
+
+         IF (cep%cepType .EQ. cepModel_DCPLD) THEN
+            lPtr => lSub%get(ctmp, "Parameters file path")
+            IF (ASSOCIATED(lPtr)) THEN
+               flag = .FALSE.
+               INQUIRE(FILE=TRIM(ctmp), EXIST=flag)
+               IF (flag) THEN
+                  fparam_in = TRIM(ctmp)
+                  init_param_file = .TRUE.
+               ELSE
+                  err = " Decoupled EC parameters file doesn't exist"
+               END IF
+            END IF
+         END IF
       END IF
 
       lSub => list%get(ctmp, "S1-S2 protocol")
@@ -235,8 +258,8 @@ c     Check inputs for any inconsistencies
 c--------------------------------------------------------------------
 c     Allocate arrays
       ALLOCATE(X(nX), Xg(nG))
-      X  = 00D0
-      Xg = 00D0
+      X  = 0._RKIND
+      Xg = 0._RKIND
 
       RETURN
       END SUBROUTINE READ_INPUTS

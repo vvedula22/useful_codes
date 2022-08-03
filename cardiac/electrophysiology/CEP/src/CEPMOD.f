@@ -7,6 +7,8 @@
 !-----------------------------------------------------------------------
 
       MODULE CEPMOD
+      USE TYPEMOD
+      USE ECMOD
       USE APMOD
       USE FNMOD
       USE TTPMOD
@@ -18,8 +20,8 @@
 !     Bueno-Orovio-Cherry-Fenton model, Fitzhugh-Nagumo model,
 !     tenTusscher-Panfilov 2006 model
       INTEGER(KIND=IKIND), PARAMETER :: cepModel_NA = 100,
-     2   cepModel_AP = 101, cepModel_BO = 102, cepModel_FN = 103,
-     3   cepModel_TTP = 104
+     2   cepModel_DCPLD = 101, cepModel_AP = 102, cepModel_BO = 103,
+     3   cepModel_FN = 104, cepModel_TTP = 105
 
 !     Time integration scheme: Forward-Euler, Runge-Kutta 4th order,
 !     Crank-Nicholson

@@ -1,7 +1,26 @@
 !-----------------------------------------------------------------------
 !
 !     This module defines data structures for Bueno-Orovio cellular
-!     activation model for cardiac electrophysiology.
+!     activation model for cardiac electrophysiology. Both active stress
+!     and active strain models are used for excitation-contraction
+!     coupling.
+!
+!     Reference for Bueno-Orovio electrophysiology model:
+!        Bueno-Orovio, A., Cherry, E. M., & Fenton, F. H. (2008).
+!        Minimal model for human ventricular action potentials in tissue
+!        Journal of Theoretical Biology, 253(3), 544–560.
+!        https://doi.org/10.1016/j.jtbi.2008.03.029
+!
+!     References for active stress/active strain models:
+!        Garcia-blanco, E., et al. (2019). A new computational framework
+!        for electro-activation in cardiac mechanics. Computer Methods
+!        in Applied Mechanics and Engineering.
+!        https://doi.org/10.1016/j.cma.2019.01.042
+!
+!        Simone Rossi, et al. (2012). Orthotropic active strain models
+!        for the numerical simulation of cardiac biomechanics.
+!        International Journal for Numerical Methods in Biomedical
+!        Engineering, 28, 761–788. https://doi.org/10.1002/cnm.2473
 !
 !-----------------------------------------------------------------------
 
@@ -120,11 +139,11 @@
 
       RETURN
       END SUBROUTINE BO_READPARFF
-!-----------------------------------------------------------------------
+!--------------------------------------------------------------------
 !     Time integration performed using Forward Euler method
       SUBROUTINE BO_INTEGFE(imyo, nX, X, Ts, Ti, Istim, Ksac, RPAR)
       IMPLICIT NONE
-      INTEGER, INTENT(IN) :: imyo, nX
+      INTEGER(KIND=IKIND), INTENT(IN) :: imyo, nX
       REAL(KIND=RKIND), INTENT(IN) :: Ts, Ti, Istim, Ksac
       REAL(KIND=RKIND), INTENT(INOUT) :: X(nX), RPAR(5)
 
@@ -145,11 +164,11 @@
 
       RETURN
       END SUBROUTINE BO_INTEGFE
-!-----------------------------------------------------------------------
+!--------------------------------------------------------------------
 !     Time integration performed using 4th order Runge-Kutta method
       SUBROUTINE BO_INTEGRK(imyo, nX, X, Ts, Ti, Istim, Ksac, RPAR)
       IMPLICIT NONE
-      INTEGER, INTENT(IN) :: imyo, nX
+      INTEGER(KIND=IKIND), INTENT(IN) :: imyo, nX
       REAL(KIND=RKIND), INTENT(IN) :: Ts, Ti, Istim, Ksac
       REAL(KIND=RKIND), INTENT(INOUT) :: X(nX), RPAR(5)
 
@@ -157,7 +176,7 @@
 
       t    = Ts / Tscale
       dt   = Ti / Tscale
-      dt6  = dt/6.0D0
+      dt6  = dt/6._RKIND
 
       Isac = Ksac * (Vrest - X(1))
       fext = (Istim + Isac) * Tscale / Vscale
@@ -168,38 +187,40 @@
       CALL BO_GETF(imyo, nX, Xrk, frk(:,1), fext, RPAR)
 
 !     RK4: 2nd pass
-      Xrk  = X + dt*frk(:,1)/2.0D0
+      Xrk  = X + 0.5_RKIND*dt*frk(:,1)
       CALL BO_GETF(imyo, nX, Xrk, frk(:,2), fext, RPAR)
 
 !     RK4: 3rd pass
-      Xrk  = X + dt*frk(:,2)/2.0D0
+      Xrk  = X + 0.5_RKIND*dt*frk(:,2)
       CALL BO_GETF(imyo, nX, Xrk, frk(:,3), fext, RPAR)
 
 !     RK4: 4th pass
       Xrk  = X + dt*frk(:,3)
       CALL BO_GETF(imyo, nX, Xrk, frk(:,4), fext, RPAR)
 
-      X = X + dt6*(frk(:,1) + 2.0D0*(frk(:,2) + frk(:,3)) + frk(:,4))
+      X = X + dt6*(frk(:,1) + 2._RKIND*(frk(:,2) + frk(:,3)) + frk(:,4))
 
       X(1) = X(1)*Vscale + Voffset
 
       RETURN
       END SUBROUTINE BO_INTEGRK
-!-----------------------------------------------------------------------
+!--------------------------------------------------------------------
 !     Time integration performed using Crank-Nicholson method
       SUBROUTINE BO_INTEGCN2(imyo, nX, Xn, Ts, Ti, Istim, Ksac, IPAR,
      2   RPAR)
       USE MATFUN
       IMPLICIT NONE
-      INTEGER, INTENT(IN) :: imyo, nX
-      INTEGER, INTENT(INOUT) :: IPAR(2)
+      INTEGER(KIND=IKIND), INTENT(IN) :: imyo, nX
+      INTEGER(KIND=IKIND), INTENT(INOUT) :: IPAR(2)
       REAL(KIND=RKIND), INTENT(IN) :: Ts, Ti, Istim, Ksac
       REAL(KIND=RKIND), INTENT(INOUT) :: Xn(nX), RPAR(5)
 
-      INTEGER :: i, k, itMax
+      REAL(KIND=RKIND), PARAMETER :: eps = EPSILON(eps)
+
+      INTEGER(KIND=IKIND) :: i, k, itMax
       LOGICAL :: l1, l2, l3
       REAL(KIND=RKIND) :: t, dt, fext, atol, rtol, Xk(nX), fn(nX),
-     2   fk(nX), rK(nX), Im(nX,nX), JAC(nX,nX), rmsA, rmsR, Isac
+     2   fK(nX), rK(nX), Im(nX,nX), JAC(nX,nX), rmsA, rmsR, Isac
 
       itMax = IPAR(1)
       atol  = RPAR(1)
@@ -224,16 +245,16 @@
       DO
          k = k + 1
          CALL BO_GETF(imyo, nX, Xk, fk, fext, RPAR)
-         rK(:) = Xk(:) - Xn(:) - 0.5D0*dt*(fk(:) + fn(:))
+         rK(:) = Xk(:) - Xn(:) - 0.5_RKIND*dt*(fk(:) + fn(:))
 
-         rmsA = 0D0
-         rmsR = 0D0
+         rmsA = 0._RKIND
+         rmsR = 0._RKIND
          DO i=1, nX
-            rmsA = rmsA + rK(i)**2.0D0
-            rmsR = rmsR + ( rK(i) / (Xk(i)+eps) )**2.0D0
+            rmsA = rmsA + rK(i)**2._RKIND
+            rmsR = rmsR + ( rK(i) / (Xk(i)+eps) )**2._RKIND
          END DO
-         rmsA = SQRT(rmsA/REAL(nX,KIND=8))
-         rmsR = SQRT(rmsR/REAL(nX,KIND=8))
+         rmsA = SQRT(rmsA/REAL(nX, KIND=RKIND))
+         rmsR = SQRT(rmsR/REAL(nX, KIND=RKIND))
 
          l1   = k .GT. itMax
          l2   = rmsA .LE. atol
@@ -241,7 +262,7 @@
          IF (l1 .OR. l2 .OR. l3) EXIT
 
          CALL BO_GETJ(imyo, nX, Xk, JAC)
-         JAC   = Im - 0.5D0*dt*JAC
+         JAC   = Im - 0.5_RKIND*dt*JAC
          JAC   = MAT_INV(JAC, nX)
          rK(:) = MATMUL(JAC, rK)
          Xk(:) = Xk(:) - rK(:)
@@ -254,10 +275,10 @@
 
       RETURN
       END SUBROUTINE BO_INTEGCN2
-!-----------------------------------------------------------------------
+!--------------------------------------------------------------------
       SUBROUTINE BO_GETF(i, n, X, f, fext, RPAR)
       IMPLICIT NONE
-      INTEGER, INTENT(IN) :: i, n
+      INTEGER(KIND=IKIND), INTENT(IN) :: i, n
       REAL(KIND=RKIND), INTENT(IN) :: X(n), fext
       REAL(KIND=RKIND), INTENT(OUT) :: f(n)
       REAL(KIND=RKIND), INTENT(INOUT) :: RPAR(5)
@@ -278,28 +299,29 @@
       H_uo  = STEP(u - theta_o(i))
 
 !     Define additional constants
-      taum_v = (1.0D0-H_umv)*taum_v1(i) + H_umv*taum_v2(i)
-      taum_w = taum_w1(i) + 0.5D0*(taum_w2(i)-taum_w1(i))*
-     2   (1.0D0 + TANH(km_w(i)*(u-um_w(i))))
-      tau_so = tau_so1(i) + 0.5D0*(tau_so2(i)-tau_so1(i))*
-     2   (1.0D0+DTANH(k_so(i)*(u-u_so(i))))
-      tau_s  = (1.0D0-H_uw)*tau_s1(i) + H_uw*tau_s2(i)
-      tau_o  = (1.0D0-H_uo)*tau_o1(i) + H_uo*tau_o2(i)
-      v_inf  = (1.0D0-H_umv)
-      w_inf  = (1.0D0-H_uo)*(1.0D0 - u/tau_winf(i)) + H_uo*ws_inf(i)
+      taum_v = (1._RKIND-H_umv)*taum_v1(i) + H_umv*taum_v2(i)
+      taum_w = taum_w1(i) + 0.5_RKIND*(taum_w2(i)-taum_w1(i))*
+     2   (1._RKIND + TANH(km_w(i)*(u-um_w(i))))
+      tau_so = tau_so1(i) + 0.5_RKIND*(tau_so2(i)-tau_so1(i))*
+     2   (1._RKIND+DTANH(k_so(i)*(u-u_so(i))))
+      tau_s  = (1._RKIND-H_uw)*tau_s1(i) + H_uw*tau_s2(i)
+      tau_o  = (1._RKIND-H_uo)*tau_o1(i) + H_uo*tau_o2(i)
+      v_inf  = (1._RKIND-H_umv)
+      w_inf  = (1._RKIND-H_uo)*(1._RKIND - u/tau_winf(i)) +
+     2   H_uo*ws_inf(i)
 
 !     Compute RHS of state variable equations
       I_fi = -v*H_uv*(u-theta_v(i))*(u_u(i) - u)/tau_fi(i)
-      I_so =  (u-u_o(i))*(1.0D0-H_uw)/tau_o + H_uw/tau_so
+      I_so =  (u-u_o(i))*(1._RKIND-H_uw)/tau_o + H_uw/tau_so
       I_si = -H_uw*w*s/tau_si(i)
 
       f(1) = -(I_fi + I_so + I_si + fext)
 
-      f(2) = (1.0D0-H_uv)*(v_inf-v)/taum_v - H_uv*v/taup_v(i)
+      f(2) = (1._RKIND-H_uv)*(v_inf-v)/taum_v - H_uv*v/taup_v(i)
 
-      f(3) = (1.0D0-H_uw)*(w_inf-w)/taum_w - H_uw*w/taup_w(i)
+      f(3) = (1._RKIND-H_uw)*(w_inf-w)/taum_w - H_uw*w/taup_w(i)
 
-      f(4) = (0.5D0*(1.0D0 + TANH(k_s(i)*(u-u_s(i))))-s)/tau_s
+      f(4) = (0.5_RKIND*(1._RKIND + TANH(k_s(i)*(u-u_s(i))))-s)/tau_s
 
       RPAR(3) = I_fi
       RPAR(4) = I_so
@@ -307,10 +329,10 @@
 
       RETURN
       END SUBROUTINE BO_GETF
-!-----------------------------------------------------------------------
+!--------------------------------------------------------------------
       SUBROUTINE BO_GETJ(i, n, X, JAC)
       IMPLICIT NONE
-      INTEGER, INTENT(IN) :: i, n
+      INTEGER(KIND=IKIND), INTENT(IN) :: i, n
       REAL(KIND=RKIND), INTENT(IN) :: X(n)
       REAL(KIND=RKIND), INTENT(OUT) :: JAC(n,n)
 
@@ -335,22 +357,23 @@
       D_uv  = DELTA(u - theta_v(i))
 
 !     Define additional constants
-      taum_v = (1.0D0-H_umv)*taum_v1(i) + H_umv*taum_v2(i)
-      taum_w = taum_w1(i) + 0.5D0*(taum_w2(i)-taum_w1(i))*
-     2   (1.0D0 + TANH(km_w(i)*(u-um_w(i))))
-      tau_so = tau_so1(i) + 0.5D0*(tau_so2(i)-tau_so1(i))*
-     2   (1.0D0+DTANH(k_so(i)*(u-u_so(i))))
-      tau_s  = (1.0D0-H_uw)*tau_s1(i) + H_uw*tau_s2(i)
-      tau_o  = (1.0D0-H_uo)*tau_o1(i) + H_uo*tau_o2(i)
-      v_inf  = (1.0D0-H_umv)
-      w_inf  = (1.0D0-H_uo)*(1.0D0 - u/tau_winf(i)) + H_uo*ws_inf(i)
+      taum_v = (1._RKIND-H_umv)*taum_v1(i) + H_umv*taum_v2(i)
+      taum_w = taum_w1(i) + 0.5_RKIND*(taum_w2(i)-taum_w1(i))*
+     2   (1._RKIND + TANH(km_w(i)*(u-um_w(i))))
+      tau_so = tau_so1(i) + 0.5_RKIND*(tau_so2(i)-tau_so1(i))*
+     2   (1._RKIND+DTANH(k_so(i)*(u-u_so(i))))
+      tau_s  = (1._RKIND-H_uw)*tau_s1(i) + H_uw*tau_s2(i)
+      tau_o  = (1._RKIND-H_uo)*tau_o1(i) + H_uo*tau_o2(i)
+      v_inf  = (1._RKIND-H_umv)
+      w_inf  = (1._RKIND-H_uo)*(1._RKIND - u/tau_winf(i)) +
+     2   H_uo*ws_inf(i)
 
 !     Define Jacobian
-      JAC(:,:) = 0.0D0
+      JAC(:,:) = 0._RKIND
 
-      n1 = v*H_uv*(u_u(i) + theta_v(i) - 2.0D0*u)/tau_fi(i)
-      n2 = -(1.0D0-H_uw)/tau_fi(i)
-      n3 = (-1.0D0/tau_so + (theta_w(i)-u_o(i))/tau_o +
+      n1 = v*H_uv*(u_u(i) + theta_v(i) - 2._RKIND*u)/tau_fi(i)
+      n2 = -(1._RKIND-H_uw)/tau_fi(i)
+      n3 = (-1._RKIND/tau_so + (theta_w(i)-u_o(i))/tau_o +
      2   w*s/tau_si(i))*D_uw
       JAC(1,1) = n1 + n2 + n3
 
@@ -360,20 +383,20 @@
       JAC(1,3) = n1*s
       JAC(1,4) = n1*w
 
-      n1 = -1.0D0/taum_v
-      n2 = -1.0D0/taup_v(i)
+      n1 = -1._RKIND/taum_v
+      n2 = -1._RKIND/taup_v(i)
       JAC(2,1) = ((v_inf-v)*n1 + v*n2)*D_uv
-      JAC(2,2) = (1.0D0-H_uv)*n1 + H_uv*n2
+      JAC(2,2) = (1._RKIND-H_uv)*n1 + H_uv*n2
 
-      n1 = -1.0D0/taum_w
-      n2 = -1.0D0/taup_w(i)
+      n1 = -1._RKIND/taum_w
+      n2 = -1._RKIND/taup_w(i)
       JAC(3,1) = ((w_inf-w)*n1 + w*n2)*D_uw
-      JAC(3,3) = (1.0D0-H_uw)*n1 + H_uw*n2
+      JAC(3,3) = (1._RKIND-H_uw)*n1 + H_uw*n2
 
       n1 = COSH(k_s(i)*(u-u_s(i)))
-      n2 = 1.0D0/(n1*n1)
-      n3 = 1.0D0/tau_s
-      JAC(4,1) = 0.5D0*k_s(i)*n2*n3
+      n2 = 1._RKIND/(n1*n1)
+      n3 = 1._RKIND/tau_s
+      JAC(4,1) = 0.5_RKIND*k_s(i)*n2*n3
       JAC(4,4) = -n3
 
       RETURN
@@ -501,7 +524,7 @@
 !     relationship and calcium concentration using backward Euler
       SUBROUTINE BO_ACTVSTRN_BE(c_c, dt, gf, itMax, atol, rtol)
       IMPLICIT NONE
-      INTEGER, INTENT(INOUT) :: itMax
+      INTEGER, INTENT(IN) :: itMax
       REAL(KIND=RKIND), INTENT(IN) :: c_c, dt, atol, rtol
       REAL(KIND=RKIND), INTENT(OUT) :: gf
 

@@ -1,34 +1,3 @@
-!
-! Copyright (c) Stanford University, The Regents of the University of
-!               California, and others.
-!
-! All Rights Reserved.
-!
-! See Copyright-SimVascular.txt for additional details.
-!
-! Permission is hereby granted, free of charge, to any person obtaining
-! a copy of this software and associated documentation files (the
-! "Software"), to deal in the Software without restriction, including
-! without limitation the rights to use, copy, modify, merge, publish,
-! distribute, sublicense, and/or sell copies of the Software, and to
-! permit persons to whom the Software is furnished to do so, subject
-! to the following conditions:
-!
-! The above copyright notice and this permission notice shall be included
-! in all copies or substantial portions of the Software.
-!
-! THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
-! IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
-! TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-! PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
-! OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-! EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-! PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-! PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-! LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-! NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-!
 !-----------------------------------------------------------------------
 !
 !     This routine embodies formulation for solving electrophysiology
@@ -42,6 +11,20 @@
       IMPLICIT NONE
 
       SELECT CASE (cep%cepType)
+      CASE (cepModel_DCPLD)
+!        Clear log file
+         WRITE(oFile,'(A)') "log_dcpld.txt"
+         CALL CTXT(oFile)
+
+!        Initialize active stress/strain variable
+         cep%ec%Ta = 0._RKIND
+
+!        Overwrite parameters with user-provided input file
+         IF (init_param_file) THEN
+            std = " Reading parameters from input file"
+            CALL EC_READPARFF(fparam_in)
+         END IF
+
       CASE (cepModel_AP)
 !        Clear log file
          WRITE(oFile,'(A)') "log_AP.txt"
@@ -93,6 +76,15 @@
          std = " Initializing Fitzhugh-Nagumo model"
          CALL FN_INIT(nX, X)
 
+!        Initialize active stress/strain variable
+         cep%ec%Ta = 0._RKIND
+
+!        Overwrite parameters with user-provided input file
+         IF (init_param_file) THEN
+            std = " Reading parameters from input file"
+            CALL FN_READPARFF(fparam_in)
+         END IF
+
       CASE (cepModel_TTP)
 !        Clear log file
          IF (cep%imyo .EQ. 1) THEN
@@ -128,7 +120,7 @@
       IMPLICIT NONE
 
       INTEGER, PARAMETER :: iwrite = 1
-      INTEGER i, j, k, no, cntr
+      INTEGER i, j, k, no
       REAL(KIND=8) :: cTS, Istim, X0, Ksac
       LOGICAL flag, ecCpld
 
@@ -170,6 +162,109 @@
       END IF
 
       SELECT CASE (cep%cepType)
+      CASE (cepModel_DCPLD)
+!        Excitation-contraction coupling due to active stress
+         IF (cep%ec%astress) THEN
+            SELECT CASE (cep%ec%odeS%tIntType)
+            CASE (tIntType_FE)
+!              Time loop
+               j   = 1
+               k   = 1
+               cTS = 0._RKIND
+               DO i=1, nTS
+                  CALL EC_ACTVSTRS_FE(cTS, dt, cep%ec%Ta)
+                  IF (ISNAN(cep%ec%Ta)) THEN
+                     err = " NaN occurence (Ta). Aborted!"
+                  END IF
+                  Xo(1) = cep%ec%Ta
+                  cTS   = cTS + dt
+
+!                 Write state variables to a log file
+                  IF (MOD(i,iwrite) .EQ. 0)
+     2               CALL WTXT(oFile, no, Xo, cTS)
+
+!                 Display progress
+                  IF (i.EQ.j .AND. iProg) THEN
+                     WRITE(*,'(A)',ADVANCE='NO') (k-1)*20//"%  "
+                     k = k + 1
+                     j = NINT(REAL((k-1)*nTS,KIND=8)/5.0D0)
+                  END IF
+               END DO
+
+            CASE (tIntType_RK4)
+!              Time loop
+               j   = 1
+               k   = 1
+               cTS = 0._RKIND
+               DO i=1, nTS
+                  CALL EC_ACTVSTRS_RK(cTS, dt, cep%ec%Ta)
+                  IF (ISNAN(cep%ec%Ta)) THEN
+                     err = " NaN occurence (Ta). Aborted!"
+                  END IF
+                  Xo(1) = cep%ec%Ta
+                  cTS   = cTS + dt
+
+!                 Write state variables to a log file
+                  IF (MOD(i,iwrite) .EQ. 0)
+     2               CALL WTXT(oFile, no, Xo, cTS)
+
+!                 Display progress
+                  IF (i.EQ.j .AND. iProg) THEN
+                     WRITE(*,'(A)',ADVANCE='NO') (k-1)*20//"%  "
+                     k = k + 1
+                     j = NINT(REAL((k-1)*nTS,KIND=8)/5.0D0)
+                  END IF
+               END DO
+
+            CASE (tIntType_BE)
+!              Time loop
+               j   = 1
+               k   = 1
+               cTS = 0._RKIND
+               DO i=1, nTS
+                  CALL EC_ACTVSTRS_BE(cTS, dt, cep%ec%Ta)
+                  IF (ISNAN(cep%ec%Ta)) THEN
+                     err = " NaN occurence (Ta). Aborted!"
+                  END IF
+                  Xo(1) = cep%ec%Ta
+                  cTS   = cTS + dt
+
+!                 Write state variables to a log file
+                  IF (MOD(i,iwrite) .EQ. 0)
+     2               CALL WTXT(oFile, no, Xo, cTS)
+
+!                 Display progress
+                  IF (i.EQ.j .AND. iProg) THEN
+                     WRITE(*,'(A)',ADVANCE='NO') (k-1)*20//"%  "
+                     k = k + 1
+                     j = NINT(REAL((k-1)*nTS,KIND=8)/5.0D0)
+                  END IF
+               END DO
+
+            END SELECT
+
+!        Excitation-contraction coupling due to active strain
+         ELSE IF (cep%ec%astrain) THEN
+            cTS = 0._RKIND
+            DO i=1, nTS
+               CALL EC_ACTVSTRN(cTS, cep%ec%Ta)
+               Xo(1) = cep%ec%Ta
+
+!              Write state variables to a log file
+               IF (MOD(i,iwrite) .EQ. 0)
+     2            CALL WTXT(oFile, no, Xo, cTS)
+
+!              Display progress
+               IF (i.EQ.j .AND. iProg) THEN
+                  WRITE(*,'(A)',ADVANCE='NO') (k-1)*20//"%  "
+                  k = k + 1
+                  j = NINT(REAL((k-1)*nTS,KIND=8)/5.0D0)
+               END IF
+
+               cTS = cTS + dt
+            END DO
+         END IF
+
       CASE (cepModel_AP)
 !        Time integrator
          SELECT CASE (cep%odes%tIntType)
@@ -731,7 +826,7 @@
 
 !              Integrate local state variables
                X0 = X(4)
-               CALL TTP_INTEGFE(cep%imyo, nX, nG, X, Xg, cTS, dt, Istim,
+               CALL TTP_INTEGFE(cep%imyo, nX, nG, X, Xg, dt, Istim,
      2            Ksac, RPAR)
 
 !              Output quantities
@@ -810,7 +905,7 @@
 
 !              Integrate local state variables
                X0 = X(4)
-               CALL TTP_INTEGRK(cep%imyo, nX, nG, X, Xg, cTS, dt, Istim,
+               CALL TTP_INTEGRK(cep%imyo, nX, nG, X, Xg, dt, Istim,
      2            Ksac, RPAR)
 
 !              Output quantities
@@ -889,8 +984,8 @@
 
 !              Integrate local state variables
                X0 = X(4)
-               CALL TTP_INTEGCN2(cep%imyo, nX, nG, X, Xg, cTS, dt,
-     2            Istim, Ksac, IPAR, RPAR)
+               CALL TTP_INTEGCN2(cep%imyo, nX, nG, X, Xg, dt, Istim,
+     2            Ksac, IPAR, RPAR)
 
 !              Output quantities
                Xo(1:nX) = X(1:nX)

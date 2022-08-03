@@ -64,6 +64,7 @@ MYFUN  = COM_TYPE.f    \
          CEPMOD_BO.f   \
          CEPMOD_FN.f   \
          CEPMOD_TTP.f  \
+         ECMOD_DCPLD.f \
          CEPMOD.f      \
          COM_MOD.f     \
          CEPION.f      \

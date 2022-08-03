@@ -8,10 +8,10 @@ from vtk.util.numpy_support import vtk_to_numpy, numpy_to_vtk
 EPS = sys.float_info.epsilon
 PI  = np.pi
 
-DATASTR1 = 'Phi_AB'
+DATASTR1 = 'Phi_EPI'
 DATASTR2 = 'Phi_LV'
 DATASTR3 = 'Phi_RV'
-DATASTR4 = 'Phi_EPI'
+DATASTR4 = 'Phi_AB'
 
 #----------------------------------------------------------------------
 # Define thersholds for domains
@@ -197,6 +197,8 @@ def loadLaplaceSoln(fileName):
 
     vtuMesh = vtk.vtkUnstructuredGrid()
 
+    print "   Extracting solution and its gradients at cells"
+
     pt2Cell = vtk.vtkPointDataToCellData()
     pt2Cell.SetInputConnection(vtuReader.GetOutputPort())
     pt2Cell.PassPointDataOn()
@@ -204,15 +206,13 @@ def loadLaplaceSoln(fileName):
     gradFilter = vtk.vtkGradientFilter()
     gradFilter.SetInputConnection(pt2Cell.GetOutputPort())
 
-    print "   Computing solution and gradients at cell centers"
-
     gradFilter.SetInputScalars(vtk.vtkDataObject.FIELD_ASSOCIATION_CELLS,\
         DATASTR1)
     gradFilter.SetResultArrayName(DATASTR1 + '_grad')
     gradFilter.Update()
     vtuMesh = gradFilter.GetOutput()
-    cPhiAB  = vtuMesh.GetCellData().GetArray(DATASTR1)
-    cGPhiAB = vtuMesh.GetCellData().GetArray(DATASTR1+'_grad')
+    cPhiEP  = vtuMesh.GetCellData().GetArray(DATASTR1)
+    cGPhiEP = vtuMesh.GetCellData().GetArray(DATASTR1+'_grad')
 
     gradFilter.SetInputScalars(vtk.vtkDataObject.FIELD_ASSOCIATION_CELLS,\
         DATASTR2)
@@ -235,8 +235,8 @@ def loadLaplaceSoln(fileName):
     gradFilter.SetResultArrayName(DATASTR4 + '_grad')
     gradFilter.Update()
     vtuMesh = gradFilter.GetOutput()
-    cPhiEP  = vtuMesh.GetCellData().GetArray(DATASTR4)
-    cGPhiEP = vtuMesh.GetCellData().GetArray(DATASTR4+'_grad')
+    cPhiAB  = vtuMesh.GetCellData().GetArray(DATASTR4)
+    cGPhiAB = vtuMesh.GetCellData().GetArray(DATASTR4+'_grad')
 
     # Clean unnecessary arrays
     vtuMesh.GetPointData().RemoveArray(DATASTR1)
@@ -255,22 +255,22 @@ def loadLaplaceSoln(fileName):
     vtuMesh.GetCellData().RemoveArray(DATASTR4)
     vtuMesh.GetCellData().RemoveArray(DATASTR4+'_grad')
 
-    return vtuMesh, cPhiAB, cPhiLV, cPhiRV, cPhiEP, \
-        cGPhiAB, cGPhiLV, cGPhiRV, cGPhiEP
+    return vtuMesh, cPhiEP, cPhiLV, cPhiRV, cPhiAB, \
+        cGPhiEP, cGPhiLV, cGPhiRV, cGPhiAB
 #----------------------------------------------------------------------
 
 #----------------------------------------------------------------------
-def setDomainID(vtuMesh, vtuPhiAB, vtuPhiLV, vtuPhiRV, vtuPhiEP):
+def setDomainID(vtuMesh, vtuPhiEP, vtuPhiLV, vtuPhiRV, vtuPhiAB):
 
     print "   Setting domain IDs at cells"
     numCell = vtuMesh.GetNumberOfCells()
     dmnIDs  = createVTKDataArray("int", 1, numCell, "DOMAIN_ID")
 
     for iCell in xrange(0, numCell):
-        phiAB = vtuPhiAB.GetTuple1(iCell)
+        phiEP = vtuPhiEP.GetTuple1(iCell)
         phiLV = vtuPhiLV.GetTuple1(iCell)
         phiRV = vtuPhiRV.GetTuple1(iCell)
-        phiEP = vtuPhiEP.GetTuple1(iCell)
+        phiAB = vtuPhiAB.GetTuple1(iCell)
 
         dmnID = 2
         if phiEP >= EPI_MYO:
@@ -385,8 +385,8 @@ def bislerp(Q_A, Q_B, t):
 #----------------------------------------------------------------------
 
 #----------------------------------------------------------------------
-def getFiberDirections(vtuMesh, vtuPhiLV, vtuPhiRV, vtuPhiEP, \
-    vtuGPhiAB, vtuGPhiLV, vtuGPhiRV, vtuGPhiEP):
+def getFiberDirections(vtuMesh, vtuPhiEP, vtuPhiLV, vtuPhiRV, \
+    vtuGPhiEP, vtuGPhiLV, vtuGPhiRV, vtuGPhiAB):
 
     numCell = vtuMesh.GetNumberOfCells()
     print "   Computing fiber directions at cells"
@@ -399,16 +399,14 @@ def getFiberDirections(vtuMesh, vtuPhiLV, vtuPhiRV, vtuPhiEP, \
     print ("      Progress "),
     sys.stdout.flush()
     for iCell in xrange(0, numCell):
-        thisCell = vtuMesh.GetCell(iCell)
-
+        phiEP  = vtuPhiEP.GetTuple1(iCell)
         phiLV  = vtuPhiLV.GetTuple1(iCell)
         phiRV  = vtuPhiRV.GetTuple1(iCell)
-        phiEP  = vtuPhiEP.GetTuple1(iCell)
 
-        gPhiAB = vtuGPhiAB.GetTuple3(iCell)
+        gPhiEP = vtuGPhiEP.GetTuple3(iCell)
         gPhiLV = vtuGPhiLV.GetTuple3(iCell)
         gPhiRV = vtuGPhiRV.GetTuple3(iCell)
-        gPhiEP = vtuGPhiEP.GetTuple3(iCell)
+        gPhiAB = vtuGPhiAB.GetTuple3(iCell)
 
         d = phiRV / max(EPS, phiLV + phiRV)
         alfaS = getAlfaS(d)
@@ -451,22 +449,23 @@ if __name__ == '__main__':
 
     t1 = time.time()
     print "========================================================"
-    fileName = "laplaceSoln.vtu"
-    vtuMesh, phiAB, phiLV, phiRV, phiEP, \
-        gPhiAB, gPhiLV, gPhiRV, gPhiEP = loadLaplaceSoln(fileName)
+    fileName = "laplace_soln.vtu"
+    vtuMesh, phiEP, phiLV, phiRV, phiAB, \
+        gPhiEP, gPhiLV, gPhiRV, gPhiAB = loadLaplaceSoln(fileName)
 
-    dmnIDs = setDomainID(vtuMesh, phiAB, phiLV, phiRV, phiEP)
+    F, S, T = getFiberDirections(vtuMesh, phiEP, phiLV, phiRV, \
+        gPhiEP, gPhiLV, gPhiRV, gPhiAB)
 
-    F, S, T = getFiberDirections(vtuMesh, phiLV, phiRV, phiEP, \
-        gPhiAB, gPhiLV, gPhiRV, gPhiEP)
+    dmnIDs = setDomainID(vtuMesh, phiEP, phiLV, phiRV, phiAB)
 
-    print "   Writing domains and fibers to VTK data structure"
-    vtuMesh.GetCellData().AddArray(dmnIDs)
+    print "   Writing fibers and domains to VTK data structure"
     vtuMesh.GetCellData().AddArray(F)
     vtuMesh.GetCellData().AddArray(S)
     vtuMesh.GetCellData().AddArray(T)
 
-    fileName = "domainsAndFibers.vtu"
+    vtuMesh.GetCellData().AddArray(dmnIDs)
+
+    fileName = "fibers_domains.vtu"
     vtuWriter = vtk.vtkXMLUnstructuredGridWriter()
     vtuWriter.SetInputData(vtuMesh)
     vtuWriter.SetFileName(fileName)

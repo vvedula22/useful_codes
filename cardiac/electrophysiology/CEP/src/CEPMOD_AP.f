@@ -1,7 +1,20 @@
 !-----------------------------------------------------------------------
 !
 !     This module defines data structures for Aliev-Panfilov cellular
-!     activation model for cardiac electrophysiology.
+!     activation model for cardiac electrophysiology. Active stress
+!     model is used for excitation-contraction coupling.
+!
+!     Reference for Aliev-Panfilov electrophysiology model:
+!        Goktepe, S., & Kuhl, E. (2009). Computational modeling of
+!        cardiac electrophysiology: A novel finite element approach.
+!        Int. J. Numer. Meth. Engng, 79, 156–178.
+!        https://doi.org/10.1002/nme
+!
+!     Reference for active stress model:
+!        Goktepe, S., & Kuhl, E. (2010). Electromechanics of the heart:
+!        A unified approach to the strongly coupled excitation-
+!        contraction problem. Computational Mechanics, 45(2–3), 227–243.
+!        https://doi.org/10.1007/s00466-009-0434-z
 !
 !-----------------------------------------------------------------------
 
@@ -379,69 +392,6 @@
 
       END SUBROUTINE GETRVAL
 !-----------------------------------------------------------------------
-      SUBROUTINE GETRVEC(fileId, skwrd, nd, rVec)
-      IMPLICIT NONE
-      INTEGER(KIND=IKIND), INTENT(IN) :: fileId, nd
-      CHARACTER(LEN=*), INTENT(IN) :: skwrd
-      REAL(KIND=RKIND), INTENT(INOUT) :: rVec(nd)
-
-      INTEGER(KIND=IKIND) :: slen, i, ios, nt
-      CHARACTER(LEN=stdL) :: sline, scmd, sval
-      CHARACTER(LEN=stdL), DIMENSION(1024) :: tokList
-
-      REWIND(fileId)
-      slen = LEN(TRIM(skwrd))
-      DO
-         READ(fileId,'(A)',END=001) sline
-         sline = ADJUSTC(sline)
-         slen  = LEN(TRIM(sline))
-         IF (sline(1:1).EQ.'#' .OR. slen.EQ.0) CYCLE
-
-         DO i=1, slen
-            IF (sline(i:i) .EQ. ':') EXIT
-         END DO
-
-         IF (i .GE. slen) THEN
-            STOP "Error: inconsistent input file format"
-         END IF
-
-         scmd = sline(1:i-1)
-         sval = sline(i+1:slen)
-         sval = ADJUSTC(sval)
-
-!        Remove any trailing comments
-         slen = LEN(TRIM(sval))
-         DO i=1, slen
-            IF (sval(i:i) .EQ. '#') EXIT
-         END DO
-         sval = TRIM(ADJUSTC(sval(1:i-1)))
-
-         IF (TRIM(skwrd) .EQ. TRIM(scmd)) THEN
-            CALL PARSESTR(sval, tokList, nt)
-            IF (nt .NE. nd) THEN
-               DO i=1, nt
-                  WRITE(*,'(I2,2X,A)') i, TRIM(tokList(i))
-               END DO
-               STOP " Error: Unexpected token length "//TRIM(skwrd)
-            END IF
-
-            DO i=1, nt
-               READ(tokList(i),*,IOSTAT=ios) rvec(i)
-               IF (ios .NE. 0) THEN
-                  STOP " Error: while reading "//TRIM(skwrd)
-               END IF
-            END DO
-            EXIT
-         END IF
-      END DO
-
- 001  RETURN
-
-! 001  STOP " Error: EOF reached while finding command <"//
-!     2   TRIM(skwrd)//">"
-
-      END SUBROUTINE GETRVEC
-!-----------------------------------------------------------------------
 !     Removes any leading spaces or tabs
       PURE FUNCTION ADJUSTC(str)
       IMPLICIT NONE
@@ -461,42 +411,6 @@
 
       RETURN
       END FUNCTION ADJUSTC
-!-----------------------------------------------------------------------
-      SUBROUTINE PARSESTR(strng, toks, ntoks)
-      IMPLICIT NONE
-      CHARACTER(LEN=*), INTENT(IN) :: strng
-      CHARACTER(LEN=*), DIMENSION(1024), INTENT(OUT) :: toks
-      INTEGER(KIND=IKIND), INTENT(OUT) :: ntoks
-
-      INTEGER(KIND=IKIND) :: i, j, slen
-      CHARACTER(LEN=stdL) :: dlmtr, token
-
-      dlmtr = ''
-      token = ''
-
-      dlmtr = '< (,=")>'
-      ntoks = 1
-      slen  = LEN(TRIM(strng))
-
-      ntoks = 0
-      i = 0
-      DO WHILE (i .LT. slen)
-         i = i + 1
-         IF (INDEX(dlmtr,strng(i:i)) .NE. 0) CYCLE
-         DO j=i+1, slen
-            IF (INDEX(dlmtr,strng(j:j)) .NE. 0) EXIT
-         END DO
-         IF (j .LE. slen) THEN
-            ntoks = ntoks + 1
-            toks(ntoks) = strng(i:j-1)
-            i = j-1
-         ELSE
-            EXIT
-         END IF
-      END DO
-
-      RETURN
-      END SUBROUTINE PARSESTR
 !-----------------------------------------------------------------------
       END MODULE APMOD
 !#######################################################################
