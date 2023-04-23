@@ -10,7 +10,7 @@ figure('units','normalized','outerposition',[0.65 0.4 0.3 0.48]);
     
     set(gca, 'FontName', 'Times', 'FontSize', 18, 'LineWidth', 2);
     ax = gca;
-    ax.XLim = [0.0 1];
+    ax.XLim = [0.0 3];
     xlabel('Time (s)',...
         'FontSize',18,'FontWeight','bold','Color','k');
     

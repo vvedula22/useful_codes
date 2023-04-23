@@ -1,7 +1,7 @@
 
 Electrophysiology model: decoupled
 
-Number of time steps: 5000
+Number of time steps: 15000
 
 Time step size: 0.2    # ms
 
