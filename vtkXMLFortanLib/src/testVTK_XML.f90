@@ -5,7 +5,8 @@
       use vtkLegacyMod
       implicit none
 
-      integer(IK), parameter :: nsd=3
+!      integer(IK), parameter :: nsd=3
+      integeR(IK) :: nsd
 
       type mshType
          integer :: nNo
@@ -84,6 +85,7 @@
 
       !call writeVTK(msh) ! not yet implemented !
 
+      nsd = 3
       call readVTU(msh)
 
       call writeVTU(msh)
@@ -95,6 +97,12 @@
       call readVTI(im)
 
       call writeVTI(im)
+
+      call destroy(fa)
+
+      nsd = 2
+      call readVTP2D(fa)
+      call writeVTP2D(fa)
 
       call destroy(msh)
       call destroy(fa)
@@ -360,6 +368,142 @@
 
       return
       end subroutine writeVTP
+
+!**************************************************
+
+      subroutine readVTP2D(lFa)
+      use variables
+      implicit none
+      type(faceType), intent(inout) :: lFa
+      type(vtkXMLType) :: vtp
+
+      real(kind=8), allocatable :: tmpX(:,:)
+
+      write(stdout,'(A)') '-----------------------'
+      write(stdout,ftab1) 'Reading file <in2D.vtp>'
+
+      call loadVTK(vtp,"in2D.vtp",istat)
+         if ( istat.lt.0 ) then
+            write(stdout,ftab4) "ERROR: VTK file read error.."
+            STOP
+         end if
+
+      call getVTK_numPoints(vtp,lFa%nNo,istat)
+         if ( istat.lt.0 ) then
+            write(stdout,ftab4) "ERROR: VTK file read error.."
+            STOP
+         end if
+
+      call getVTK_numElems(vtp,lFa%nEl,istat)
+         if ( istat.lt.0 ) then
+            write(stdout,ftab4) "ERROR: VTK file read error.."
+            STOP
+         end if
+
+      call getVTK_nodesPerElem(vtp,lFa%eNoN,istat)
+         if ( istat.lt.0 ) then
+            write(stdout,ftab4) "ERROR: VTK file read error.."
+            STOP
+         end if
+
+      allocate(lFa%IEN(lFa%eNoN,lFa%nEl))
+      allocate(lFa%x(nsd,lFa%nNo), tmpX(maxNSD,lFa%nNo))
+      allocate(lFa%gN(lFa%nNo), lFa%gE(lFa%nEl))
+
+      call getVTK_pointCoords(vtp,tmpX,istat)
+      lFa%x(:,:) = tmpX(1:nsd,:)
+      deallocate(tmpX)
+         if ( istat.lt.0 ) then
+            write(stdout,ftab4) "ERROR: VTK file read error.. (pcoord)"
+            STOP
+         end if
+
+      call getVTK_elemIEN(vtp,lFa%ien,istat)
+         if ( istat.lt.0 ) then
+            write(stdout,ftab4) "ERROR: VTK file read error.. (IEN)"
+            STOP
+         end if
+
+      call getVTK_pointData(vtp,'GlobalNodeID',lFa%gN,istat)
+         if ( istat.lt.0 ) then
+            write(stdout,ftab4) "ERROR: VTK file read error.. (NodeID)"
+            STOP
+         end if
+
+      call getVTK_elemData(vtp,'GlobalElementID',lFa%gE,istat)
+         if ( istat.lt.0 ) then
+            write(stdout,ftab4) "ERROR: VTK file read error.. (CellID)"
+            STOP
+         end if
+
+      call flushVTK(vtp)
+
+      return
+      end subroutine readVTP2D
+
+!**************************************************
+
+      subroutine writeVTP2D(lFa)
+      use variables
+      implicit none
+      type(faceType), intent(inout) :: lFa
+      type(vtkXMLType) :: vtp
+
+      write(stdout,ftab1) 'Writing file <out2D.vtp>'
+
+      if (nsd .EQ. 3) then
+         select case (lFa%eNoN)
+         case(3)
+            lFa%vtkType = 5   ! Tri !
+         case(4)
+            lFa%vtkType = 9   ! Quad !
+         end select
+      else
+         select case (lFa%eNoN)
+         case(2)
+            lFa%vtkType = 3   ! Line !
+         case(3)
+            lFa%vtkType = 21   ! Quadr-Edge !
+         end select
+      end if
+
+      call vtkInitWriter(vtp,"out2D.vtp",istat)
+         if ( istat.lt.0 ) then
+            write(stdout,ftab4) "ERROR: VTK file write error.."
+            STOP
+         end if
+
+      call putVTK_pointCoords(vtp,lFa%x,istat)
+         if ( istat.lt.0 ) then
+            write(stdout,ftab4) "ERROR: VTK file write error.."
+            STOP
+         end if
+
+      call putVTK_elemIEN(vtp,lFa%IEN,lFa%vtkType,istat)
+         if ( istat.lt.0 ) then
+            write(stdout,ftab4) "ERROR: VTK file write error.."
+            STOP
+         end if
+
+      call putVTK_pointData(vtp,"GlobalNodeID",lFa%gN,istat)
+         if ( istat.lt.0 ) then
+            write(stdout,ftab4) "ERROR: VTK file write error.."
+            STOP
+         end if
+
+      call putVTK_elemData(vtp,"GlobalElementID",lFa%gE,istat)
+         if ( istat.lt.0 ) then
+            write(stdout,ftab4) "ERROR: VTK file write error.."
+            STOP
+         end if
+
+      call vtkWriteToFile(vtp,istat)
+
+      call flushVTK(vtp)
+      write(stdout,'(A)') '-----------------------'
+
+      return
+      end subroutine writeVTP2D
 
 !**************************************************
 
