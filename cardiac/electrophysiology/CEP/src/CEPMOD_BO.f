@@ -145,7 +145,7 @@
       IMPLICIT NONE
       INTEGER(KIND=IKIND), INTENT(IN) :: imyo, nX
       REAL(KIND=RKIND), INTENT(IN) :: Ts, Ti, Istim, Ksac
-      REAL(KIND=RKIND), INTENT(INOUT) :: X(nX), RPAR(5)
+      REAL(KIND=RKIND), INTENT(INOUT) :: X(nX), RPAR(7)
 
       REAL(KIND=RKIND) :: t, dt, f(nX), fext, Isac
 
@@ -162,6 +162,9 @@
 
       X(1) = X(1)*Vscale + Voffset
 
+      RPAR(6) = Istim
+      RPAR(7) = Isac
+
       RETURN
       END SUBROUTINE BO_INTEGFE
 !--------------------------------------------------------------------
@@ -170,7 +173,7 @@
       IMPLICIT NONE
       INTEGER(KIND=IKIND), INTENT(IN) :: imyo, nX
       REAL(KIND=RKIND), INTENT(IN) :: Ts, Ti, Istim, Ksac
-      REAL(KIND=RKIND), INTENT(INOUT) :: X(nX), RPAR(5)
+      REAL(KIND=RKIND), INTENT(INOUT) :: X(nX), RPAR(7)
 
       REAL(KIND=RKIND) :: t, dt, dt6, fext, Isac, Xrk(nX), frk(nX,4)
 
@@ -202,6 +205,9 @@
 
       X(1) = X(1)*Vscale + Voffset
 
+      RPAR(6) = Istim
+      RPAR(7) = Isac
+
       RETURN
       END SUBROUTINE BO_INTEGRK
 !--------------------------------------------------------------------
@@ -213,7 +219,7 @@
       INTEGER(KIND=IKIND), INTENT(IN) :: imyo, nX
       INTEGER(KIND=IKIND), INTENT(INOUT) :: IPAR(2)
       REAL(KIND=RKIND), INTENT(IN) :: Ts, Ti, Istim, Ksac
-      REAL(KIND=RKIND), INTENT(INOUT) :: Xn(nX), RPAR(5)
+      REAL(KIND=RKIND), INTENT(INOUT) :: Xn(nX), RPAR(7)
 
       REAL(KIND=RKIND), PARAMETER :: eps = EPSILON(eps)
 
@@ -272,6 +278,9 @@
       Xn(1) = Xn(1)*Vscale + Voffset
 
       IF (.NOT.l2 .AND. .NOT.l3) IPAR(2) = IPAR(2) + 1
+
+      RPAR(6) = Istim
+      RPAR(7) = Isac
 
       RETURN
       END SUBROUTINE BO_INTEGCN2
@@ -741,7 +750,7 @@ c      Jac  = mui * (dFa + I4f*dts + 2._RKIND*SQRT(I4f)*ts)
 
       INTEGER(KIND=IKIND) :: slen, i, ios, nt
       CHARACTER(LEN=stdL) :: sline, scmd, sval
-      CHARACTER(LEN=stdL), DIMENSION(1024) :: tokList
+      CHARACTER(LEN=stdL), DIMENSION(250) :: tokList
 
       REWIND(fileId)
       slen = LEN(TRIM(skwrd))

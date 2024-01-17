@@ -409,7 +409,7 @@
       TYPE(listType), POINTER :: GFLIV
 
       INTEGER(KIND=IKIND) i, ioS, n, nToks
-      CHARACTER(LEN=stdL), DIMENSION(1024) :: tokList
+      CHARACTER(LEN=stdL), DIMENSION(250) :: tokList
 
       n = SIZE(vVal)
       IF (PRESENT(ind)) THEN
@@ -501,7 +501,7 @@
       TYPE(listType), POINTER :: GFLRV
 
       INTEGER(KIND=IKIND) i, ioS, n, nToks
-      CHARACTER(LEN=stdL), DIMENSION(1024) :: tokList
+      CHARACTER(LEN=stdL), DIMENSION(250) :: tokList
 
       n = SIZE(vVal)
       IF (PRESENT(ind)) THEN
@@ -601,7 +601,7 @@
       RECURSIVE SUBROUTINE DESTROYLIST(list)
       IMPLICIT NONE
       TYPE(listType), INTENT(INOUT) :: list
-      INTEGER(KIND=IKIND) :: stat, i
+      INTEGER(KIND=IKIND) :: ios, i
 
       DO i=1, list%l
          IF (list%sub(i)%l /= 0) THEN
@@ -609,10 +609,11 @@
          END IF
       END DO
 
+      ios = 0
       IF (list%l /= 0) THEN
-         DEALLOCATE(list%sub, STAT = stat)
+         DEALLOCATE(list%sub, STAT = ios)
       END IF
-      IF ( stat /= 0 ) STOP "*** Trouble deallocating ***"
+      IF ( ios /= 0 ) STOP "*** Trouble deallocating ***"
 
       END SUBROUTINE DESTROYLIST
 !####################################################################

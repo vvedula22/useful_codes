@@ -91,10 +91,10 @@
       END SUBROUTINE AP_READPARFF
 !-----------------------------------------------------------------------
 !     Time integration performed using Forward Euler method
-      SUBROUTINE AP_INTEGFE(nX, X, Ts, Ti, Istim, Ksac)
+      SUBROUTINE AP_INTEGFE(nX, X, Ts, Ti, Istim, Ksac, RPAR)
       IMPLICIT NONE
       INTEGER(KIND=IKIND), INTENT(IN) :: nX
-      REAL(KIND=RKIND), INTENT(INOUT) :: X(nX)
+      REAL(KIND=RKIND), INTENT(INOUT) :: X(nX), RPAR(4)
       REAL(KIND=RKIND), INTENT(IN) :: Ts, Ti, Istim, Ksac
 
       REAL(KIND=RKIND) :: t, dt, f(nX), Isac, fext
@@ -109,14 +109,17 @@
       X = X + dt*f
       X(1) = X(1)*Vscale + Voffset
 
+      RPAR(3) = Istim
+      RPAR(4) = Isac
+
       RETURN
       END SUBROUTINE AP_INTEGFE
 !-----------------------------------------------------------------------
 !     Time integration performed using 4th order Runge-Kutta method
-      SUBROUTINE AP_INTEGRK(nX, X, Ts, Ti, Istim, Ksac)
+      SUBROUTINE AP_INTEGRK(nX, X, Ts, Ti, Istim, Ksac, RPAR)
       IMPLICIT NONE
       INTEGER(KIND=IKIND), INTENT(IN) :: nX
-      REAL(KIND=RKIND), INTENT(INOUT) :: X(nX)
+      REAL(KIND=RKIND), INTENT(INOUT) :: X(nX), RPAR(4)
       REAL(KIND=RKIND), INTENT(IN) :: Ts, Ti, Istim, Ksac
 
       REAL(KIND=RKIND) :: t, dt, dt6, Isac, fext, Xrk(nX), frk(nX,4)
@@ -149,6 +152,9 @@
 
       X(1) = X(1)*Vscale + Voffset
 
+      RPAR(3) = Istim
+      RPAR(4) = Isac
+
       RETURN
       END SUBROUTINE AP_INTEGRK
 !-----------------------------------------------------------------------
@@ -158,7 +164,7 @@
       IMPLICIT NONE
       INTEGER(KIND=IKIND), INTENT(IN) :: nX
       INTEGER(KIND=IKIND), INTENT(INOUT) :: IPAR(2)
-      REAL(KIND=RKIND), INTENT(INOUT) :: Xn(nX), RPAR(2)
+      REAL(KIND=RKIND), INTENT(INOUT) :: Xn(nX), RPAR(4)
       REAL(KIND=RKIND), INTENT(IN) :: Ts, Ti, Istim, Ksac
 
       REAL(KIND=RKIND), PARAMETER :: eps = EPSILON(eps)
@@ -217,6 +223,9 @@
       Xn(1) = Xn(1)*Vscale + Voffset
 
       IF (.NOT.l2 .AND. .NOT.l3) IPAR(2) = IPAR(2) + 1
+
+      RPAR(3) = Istim
+      RPAR(4) = Isac
 
       RETURN
       END SUBROUTINE AP_INTEGCN2

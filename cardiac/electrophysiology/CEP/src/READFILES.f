@@ -80,6 +80,11 @@ c     Load inputs from list
          nX = 7
          nG = 12
 
+      CASE ("nyg","nygren")
+         cep%cepType = cepModel_NYG
+         nX = 18
+         nG = 12
+
       CASE DEFAULT
          err = " Unknown electrophysiology model"
       END SELECT
@@ -131,11 +136,6 @@ c     Load inputs from list
 
          CASE ("cn", "cn2", "implicit")
             cep%odes%tIntType = tIntType_CN2
-            IF (cep%cepType .EQ. cepModel_TTP) THEN
-               err = "Implicit time integration for tenTusscher-"//
-     2            "Panfilov model can give unexpected results. "//
-     3            "Use FE or RK4 instead"
-            END IF
 
          CASE DEFAULT
             err = " Unknown ODE time integration scheme"
@@ -234,6 +234,11 @@ c     Check inputs for any inconsistencies
      2      " Fitzhugh-Nagumo model"
       END IF
 
+      IF (flag .AND. cep%cepType.EQ.cepModel_NYG) THEN
+         err = " Excitation-contraction coupling is not allowed for "//
+     2      " Nygren model"
+      END IF
+
       IF (cep%cepType.EQ.cepModel_AP .AND. cep%ec%astrain) THEN
          err = " Active-strain coupling is allowed for TTP and BO"//
      2      " activation models only"
@@ -253,6 +258,19 @@ c     Check inputs for any inconsistencies
       IF (flag .AND. cep%imyo.GT.1) THEN
          err = " Mid-myocardium and endocardium zones are allowed"//
      2      " only for TTP and BO activation models."
+      END IF
+
+      IF (cep%odes%tIntType .EQ. tIntType_CN2) THEN
+         IF (cep%cepType .EQ. cepModel_TTP) THEN
+            err = "Implicit time integration for tenTusscher-"//
+     2         "Panfilov model can give unexpected results. "//
+     3         "Use FE or RK4 instead"
+         END IF
+
+         IF (cep%cepType .EQ. cepModel_NYG) THEN
+            err = "Implicit time integration is not allowed for "//
+     3         "Nygren model. Use FE or RK4 instead"
+         END IF
       END IF
 
 c--------------------------------------------------------------------

@@ -242,7 +242,7 @@
       SUBROUTINE TTP_INTEGFE(imyo, nX, nG, X, Xg, dt, Istim, Ksac, RPAR)
       IMPLICIT NONE
       INTEGER(KIND=IKIND), INTENT(IN) :: imyo, nX, nG
-      REAL(KIND=RKIND), INTENT(INOUT) :: X(nX), Xg(nG), RPAR(18)
+      REAL(KIND=RKIND), INTENT(INOUT) :: X(nX), Xg(nG), RPAR(20)
       REAL(KIND=RKIND), INTENT(IN) :: dt, Istim, Ksac
 
       REAL(KIND=RKIND) :: f(nX)
@@ -263,7 +263,7 @@
       SUBROUTINE TTP_INTEGRK(imyo, nX, nG, X, Xg, dt, Istim, Ksac, RPAR)
       IMPLICIT NONE
       INTEGER(KIND=IKIND), INTENT(IN) :: imyo, nX, nG
-      REAL(KIND=RKIND), INTENT(INOUT) :: X(nX), Xg(nG), RPAR(18)
+      REAL(KIND=RKIND), INTENT(INOUT) :: X(nX), Xg(nG), RPAR(20)
       REAL(KIND=RKIND), INTENT(IN) :: dt, Istim, Ksac
 
       REAL(KIND=RKIND) :: dt6, Xrk(nX), Xgr(nG), frk(nX,4)
@@ -310,7 +310,7 @@
       INTEGER(KIND=IKIND), INTENT(IN) :: i, nX, nG
       REAL(KIND=RKIND), INTENT(IN) :: X(nX), Xg(nG), I_stim, K_sac
       REAL(KIND=RKIND), INTENT(OUT) :: dX(nX)
-      REAL(KIND=RKIND), INTENT(INOUT) :: RPAR(18)
+      REAL(KIND=RKIND), INTENT(INOUT) :: RPAR(20)
 
       REAL(KIND=RKIND) :: RT, a, b, tau, sq5, e1, e2, e3, e4, n1, n2,
      2   d1, d2, d3, I_sac
@@ -429,7 +429,7 @@
 !     Now compute time derivatives
 !     dV/dt: rate of change of transmembrane voltage
       dX(1)  = -(I_Na + I_to + I_K1 + I_Kr + I_Ks + I_CaL + I_NaCa +
-     2   I_NaK + I_pCa + I_pK + I_bCa + I_bNa  + I_stim) + I_sac
+     2   I_NaK + I_pCa + I_pK + I_bCa + I_bNa + I_stim) + I_sac
 
 !     dK_i/dt
       dX(2)  = -(Cm/(V_c*Fc)) * (I_K1 + I_to + I_Kr + I_Ks + I_pK -
@@ -477,6 +477,8 @@
       RPAR(16) = I_up
       RPAR(17) = I_rel
       RPAR(18) = I_xfer
+      RPAR(19) = I_stim
+      RPAR(20) = I_sac
 
       RETURN
       END SUBROUTINE TTP_GETF
@@ -632,7 +634,7 @@ c      IF (V .GT. 0._RKIND) tau = tau*2._RKIND
       IMPLICIT NONE
       INTEGER(KIND=IKIND), INTENT(IN) :: imyo, nX, nG
       INTEGER(KIND=IKIND), INTENT(INOUT) :: IPAR(2)
-      REAL(KIND=RKIND), INTENT(INOUT) :: Xn(nX), Xg(nG), RPAR(18)
+      REAL(KIND=RKIND), INTENT(INOUT) :: Xn(nX), Xg(nG), RPAR(20)
       REAL(KIND=RKIND), INTENT(IN) :: dt, Istim, Ksac
 
       INTEGER(KIND=IKIND) :: i, k, itMax
@@ -1233,7 +1235,7 @@ c      Jac  = mui * (dFa + I4f*dts + 2._RKIND*SQRT(I4f)*ts)
 
       INTEGER(KIND=IKIND) :: slen, i, ios, nt
       CHARACTER(LEN=stdL) :: sline, scmd, sval
-      CHARACTER(LEN=stdL), DIMENSION(1024) :: tokList
+      CHARACTER(LEN=stdL), DIMENSION(250) :: tokList
 
       REWIND(fileId)
       slen = LEN(TRIM(skwrd))

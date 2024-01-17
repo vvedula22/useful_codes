@@ -45,7 +45,13 @@ LAPACK_LFLAGS = -llapack
 
 debug = 0
 ifeq ($(debug),1)
-   FFLAGS += -g -fbacktrace -fbounds-check -Wall
+   ifeq ($(shell expr `gcc -dumpversion | cut -f1 -d.` \< 10), 1)
+      FFLAGS += -pedantic
+   endif
+   FFLAGS += -g -Wall -Wconversion -Wline-truncation -fimplicit-none \
+                -fbacktrace -fbounds-check -p -fcheck=all \
+                -ffpe-trap=invalid,zero,overflow,underflow \
+                -fmax-stack-var-size=131072
 endif
 
 S1S2 = 0
@@ -63,6 +69,7 @@ MYFUN  = COM_TYPE.f    \
          CEPMOD_AP.f   \
          CEPMOD_BO.f   \
          CEPMOD_FN.f   \
+	 CEPMOD_NYG.f  \
          CEPMOD_TTP.f  \
          ECMOD_DCPLD.f \
          CEPMOD.f      \

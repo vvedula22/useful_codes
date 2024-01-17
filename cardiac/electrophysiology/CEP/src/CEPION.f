@@ -97,7 +97,8 @@
          CALL CTXT(oFile)
 
 !        Initialize state variables
-         std = " Initializing tenTusscher-Panfilov model"
+         std = " Initializing tenTusscher-Panfilov model"//
+     2      " for ventricular myocyte"
          CALL TTP_INIT(cep%imyo, nX, nG, X, Xg)
 
 !        Initialize active stress/strain variable
@@ -107,6 +108,24 @@
          IF (init_param_file) THEN
             std = " Reading parameters from input file"
             CALL TTP_READPARFF(fparam_in)
+         END IF
+
+      CASE (cepModel_NYG)
+!        Clear log file
+         WRITE(oFile,'(A)') "log_NYG.txt"
+         CALL CTXT(oFile)
+
+!        Initialize state variables
+         std = " Initializing Nygren atrial myocyte model"
+         CALL NYG_INIT(nX, nG, X, Xg)
+
+!        Initialize active stress/strain variable
+         cep%ec%Ta = 0._RKIND
+
+!        Overwrite parameters with user-provided input file
+         IF (init_param_file) THEN
+            std = " Reading parameters from input file"
+            CALL NYG_READPARFF(fparam_in)
          END IF
 
       END SELECT
@@ -129,12 +148,18 @@
 
 !     Output to files
       no = nX
-      IF (cep%cepType .EQ. cepModel_BO) THEN
-         no = no + 3
-         ALLOCATE(RPAR(5))
+      IF (cep%cepType .EQ. cepModel_AP) THEN
+         no = no + 2
+         ALLOCATE(RPAR(4))
+      ELSE IF (cep%cepType .EQ. cepModel_BO) THEN
+         no = no + 5
+         ALLOCATE(RPAR(7))
       ELSE IF (cep%cepType .EQ. cepModel_TTP) THEN
-         no = no + 16
-         ALLOCATE(RPAR(18))
+         no = no + 18
+         ALLOCATE(RPAR(20))
+      ELSE IF (cep%cepType .EQ. cepModel_NYG) THEN
+         no = no + 18
+         ALLOCATE(RPAR(20))
       ELSE
          ALLOCATE(RPAR(2))
       END IF
@@ -161,6 +186,9 @@
          WRITE(*,'(A)',ADVANCE='NO') " Time integration progress: "
       END IF
 
+      j   = 1
+      k   = 1
+      cTS = 0._RKIND
       SELECT CASE (cep%cepType)
       CASE (cepModel_DCPLD)
 !        Excitation-contraction coupling due to active stress
@@ -280,10 +308,11 @@
 
 !              Integrate local state variables
                X0 = X(1)
-               CALL AP_INTEGFE(nX, X, cTS, dt, Istim, Ksac)
+               CALL AP_INTEGFE(nX, X, cTS, dt, Istim, Ksac, RPAR)
 
 !              Output quantities
-               Xo(1:nX) = X(:)
+               Xo(1:nX) = X(1:nX)
+               Xo(nX+1:nX+2) = RPAR(3:4)
 
 !              Perform NaN check
                IF (ISNAN(X(1))) THEN
@@ -336,10 +365,11 @@
 
 !              Integrate local state variables
                X0 = X(1)
-               CALL AP_INTEGRK(nX, X, cTS, dt, Istim, Ksac)
+               CALL AP_INTEGRK(nX, X, cTS, dt, Istim, Ksac, RPAR)
 
 !              Output quantities
-               Xo(1:nX) = X(:)
+               Xo(1:nX) = X(1:nX)
+               Xo(nX+1:nX+2) = RPAR(3:4)
 
 !              Perform NaN check
                IF (ISNAN(X(1))) THEN
@@ -395,7 +425,8 @@
                CALL AP_INTEGCN2(nX, X, cTS, dt, Istim, Ksac, IPAR, RPAR)
 
 !              Output quantities
-               Xo(1:nX) = X(:)
+               Xo(1:nX) = X(1:nX)
+               Xo(nX+1:nX+2) = RPAR(3:4)
 
 !              Perform NaN check
                IF (ISNAN(X(1))) THEN
@@ -464,7 +495,7 @@
 
 !              Output quantities
                Xo(1:nX) = X(:)
-               Xo(nX+1:nX+3) = RPAR(3:5)
+               Xo(nX+1:nX+5) = RPAR(3:7)
 
 !              Perform NaN check
                IF (ISNAN(X(1))) THEN
@@ -550,7 +581,7 @@
 
 !              Output quantities
                Xo(1:nX) = X(:)
-               Xo(nX+1:nX+3) = RPAR(3:5)
+               Xo(nX+1:nX+5) = RPAR(3:7)
 
 !              Perform NaN check
                IF (ISNAN(X(1))) THEN
@@ -636,7 +667,7 @@
 
 !              Output quantities
                Xo(1:nX) = X(:)
-               Xo(nX+1:nX+3) = RPAR(3:5)
+               Xo(nX+1:nX+5) = RPAR(3:7)
 
 !              Perform NaN check
                IF (ISNAN(X(1))) THEN
@@ -831,7 +862,7 @@
 
 !              Output quantities
                Xo(1:nX) = X(1:nX)
-               Xo(nX+1:nX+16) = RPAR(3:18)
+               Xo(nX+1:nX+18) = RPAR(3:20)
 
 !              Perform NaN check
                IF (ISNAN(X(1))) THEN
@@ -910,7 +941,7 @@
 
 !              Output quantities
                Xo(1:nX) = X(1:nX)
-               Xo(nX+1:nX+16) = RPAR(3:18)
+               Xo(nX+1:nX+18) = RPAR(3:20)
 
 !              Perform NaN check
                IF (ISNAN(X(1))) THEN
@@ -989,7 +1020,7 @@
 
 !              Output quantities
                Xo(1:nX) = X(1:nX)
-               Xo(nX+1:nX+16) = RPAR(3:18)
+               Xo(nX+1:nX+18) = RPAR(3:20)
 
 !              Perform NaN check
                IF (ISNAN(X(1))) THEN
@@ -1034,6 +1065,85 @@
                      err = " NaN occurence (Ta). Aborted!"
                   END IF
                   Xo(no) = cep%ec%Ta
+               END IF
+
+!              Time step advance
+               cTS = cTS + dt
+
+!              Write state variables to a log file
+               IF (MOD(i,iwrite) .EQ. 0)
+     2            CALL WTXT(oFile, no, Xo, cTS)
+
+!           Display progress
+               IF (i.EQ.j .AND. iProg) THEN
+                  WRITE(*,'(A)',ADVANCE='NO') (k-1)*20//"%  "
+                  k = k + 1
+                  j = NINT(REAL((k-1)*nTS,KIND=8)/5.0D0)
+               END IF
+            END DO
+         END SELECT
+
+      CASE (cepModel_NYG)
+!        Time integrator
+         SELECT CASE (cep%odes%tIntType)
+         CASE (tIntType_FE)
+!           Time loop
+            j   = 1
+            k   = 1
+            cTS = 0._RKIND
+            DO i=1, nTS
+!              Get stimulus current
+               CALL GET_STIM_AMP(cTS, cep, Istim, flag)
+               IF (flag) RETURN
+
+!              Integrate local state variables
+               X0 = X(4)
+               CALL NYG_INTEGFE(nX, nG, X, Xg, dt, Istim, Ksac, RPAR)
+
+!              Output quantities
+               Xo(1:nX) = X(1:nX)
+               Xo(nX+1:nX+18) = RPAR(3:20)
+
+!              Perform NaN check
+               IF (ISNAN(X(1))) THEN
+                  err = " NaN occurence (X). Aborted!"
+               END IF
+
+!              Time step advance
+               cTS = cTS + dt
+
+!              Write state variables to a log file
+               IF (MOD(i,iwrite) .EQ. 0)
+     2            CALL WTXT(oFile, no, Xo, cTS)
+
+!           Display progress
+               IF (i.EQ.j .AND. iProg) THEN
+                  WRITE(*,'(A)',ADVANCE='NO') (k-1)*20//"%  "
+                  k = k + 1
+                  j = NINT(REAL((k-1)*nTS,KIND=8)/5.0D0)
+               END IF
+            END DO
+
+         CASE (tIntType_RK4)
+!           Time loop
+            j   = 1
+            k   = 1
+            cTS = 0._RKIND
+            DO i=1, nTS
+!              Get stimulus current
+               CALL GET_STIM_AMP(cTS, cep, Istim, flag)
+               IF (flag) RETURN
+
+!              Integrate local state variables
+               CALL NYG_INTEGRK(nX, nG, X, Xg, dt, Istim, Ksac, RPAR)
+
+!              Output quantities
+               Xo(1:nX) = X(1:nX)
+               Xo(nX+1:nX+18) = RPAR(3:20)
+
+!              Perform NaN check
+               IF (ISNAN(X(1))) THEN
+                  err = " NaN occurence (X). Aborted!"
                END IF
 
 !              Time step advance

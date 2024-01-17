@@ -13,15 +13,16 @@
       USE FNMOD
       USE TTPMOD
       USE BOMOD
+      USE NYGMOD
       USE UTILMOD, ONLY : stdL
       IMPLICIT NONE
 
 !     Type of cardiac electrophysiology models: Aliev-Panfilov model,
 !     Bueno-Orovio-Cherry-Fenton model, Fitzhugh-Nagumo model,
-!     tenTusscher-Panfilov 2006 model
+!     tenTusscher-Panfilov 2006 model, Nygren model
       INTEGER(KIND=IKIND), PARAMETER :: cepModel_NA = 100,
      2   cepModel_DCPLD = 101, cepModel_AP = 102, cepModel_BO = 103,
-     3   cepModel_FN = 104, cepModel_TTP = 105
+     3   cepModel_FN = 104, cepModel_TTP = 105, cepModel_NYG = 106
 
 !     Time integration scheme: Forward-Euler, Runge-Kutta 4th order,
 !     Crank-Nicholson
