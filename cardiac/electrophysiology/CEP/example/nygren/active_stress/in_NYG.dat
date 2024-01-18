@@ -3,17 +3,17 @@ Electrophysiology model: nygren {
     CEP model parameters file path: params_nyg.in
 }
 
-Time integration scheme: fe #rk4
+Time integration scheme: rk4
 
-Number of time steps: 5000
+Number of time steps: 10000
 
-Time step size: 0.2       # ms
+Time step size: 0.0001    # s
 
 Stimulus: I {
-    Amplitude:  280.0     # pA
-    Start time: 100.0     # ms
-    Duration: 6.0         # ms
-    Cycle length: 1000.0  # ms
+    Amplitude: -280.0     # pA
+    Start time: 0.1       # s
+    Duration: 0.006       # s
+    Cycle length: 1.0     # s
 }
 
 #Excitation-contraction coupling: active_stress {

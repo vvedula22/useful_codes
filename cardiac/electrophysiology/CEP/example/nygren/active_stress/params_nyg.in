@@ -5,166 +5,168 @@
 #--------------------------------------------------------------------
 
 #     Default model parameters
-#     Na_b: Na concentration in bulk (bathing) medium
-      REAL(KIND=RKIND) :: Na_b = 130._RKIND           # units: mmol/L
+#     Na_b: Na concentration in bulk (bathing) medium, units: mmol/L
+      Na_b : 130.0
 
-#     K_b: K concentration in bulk (bathing) medium
-      REAL(KIND=RKIND) :: K_b = 5.4_RKIND            # units: mmol/L
+#     K_b: K concentration in bulk (bathing) medium, units: mmol/L
+      K_b : 5.4
 
-#     Ca_b: Ca concentration in bulk (bathing) medium
-      REAL(KIND=RKIND) :: Ca_b = 1.8_RKIND           # units: mmol/L
+#     Ca_b: Ca concentration in bulk (bathing) medium, units: mmol/L
+      Ca_b : 1.8
 
-#     Mg_i: Mg concentration in the intracellular medium
-      REAL(KIND=RKIND) :: Mg_i = 2.5_RKIND           # units: mmol/L
+#     Mg_i: Mg concentration in the intracellular medium, units: mmol/L
+      Mg_i : 2.5
 
-#     E_Ca,app: Apparent reversal potential for I_Ca,L
-      REAL(KIND=RKIND) :: E_Ca_app = 60_RKIND        # units: mV
+#     E_Ca,app: Apparent reversal potential for I_Ca,L, units: mV
+      E_Ca_app : 60.0
 
-#     K_Ca: Half-maximum Ca^2+ binding concentration for f_Ca
-      REAL(KIND=RKIND) :: K_Ca = 0.25_RKIND          # units: mmol/L
+#     K_Ca: Half-maximum Ca^2+ binding concentration for f_Ca, units: mmol/L
+      K_Ca : 0.025
 
-#     R: Universal Gas constant
-      REAL(KIND=RKIND) :: R = 8314._RKIND            # units: mJ/mol/K
+#     R: Universal Gas constant, units: mJ/mol/K
+      R : 8314.0
 
-#     T: Absolute temperature
-      REAL(KIND=RKIND) :: T = 306.15_RKIND           # units: K
+#     T: Absolute temperature, units: K
+      T : 306.15
 
-#     F: Faraday's constant
-      REAL(KIND=RKIND) :: F = 96487._RKIND           # units: C/mmol
+#     F: Faraday's constant, units: C/mmol
+      F : 96487.0
 
-#     Cm: Membrane capacitance
-      REAL(KIND=RKIND) :: Cm = 0.05_RKIND            # units: nF
+#     Cm: Membrane capacitance, units: nF
+      Cm : 0.05
 
-#     Vol_i: Total cytosolic volume
-      REAL(KIND=RKIND) :: Vol_i = 0.005884_RKIND     # units: nL
+#     Vol_i: Total cytosolic volume, units: nL
+      Vol_i : 0.005884
 
-#     Vol_c: Volume of the extracellular cleft space
-#     Vol_c = 0.136 * Vol_i
-      REAL(KIND=RKIND) :: Vol_c = 0.000800224_RKIND  # units: nL
+#     Vol_c: Volume of the extracellular cleft space, units: nL
+#     Vol_c : 0.136 * Vol_i
+      Vol_c : 0.000800224
 
-#     Vol_d: Volume of the diffusion-restricted subsarcolemmal space
-#     Vol_d = 0.02 * Vol_i
-      REAL(KIND=RKIND) :: Vol_d = 0.00011768_RKIND   # units: nL
+#     Vol_d: Volume of the diffusion-restricted subsarcolemmal space, units: nL
+#     Vol_d : 0.02 * Vol_i
+      Vol_d : 0.00011768
 
-#     Vol_rel: Volume of the sarcoplasmic reticulum release compartment
-      REAL(KIND=RKIND) :: Vol_rel = 0.0000441_RKIND  # units: nL
+#     Vol_rel: Volume of the sarcoplasmic reticulum release compartment, units: nL
+      Vol_rel : 0.0000441
 
-#     Vol_up: Volume of the sarcoplasmic reticulum uptake compartment
-      REAL(KIND=RKIND) :: Vol_up = 0.0003969_RKIND   # units: nL
+#     Vol_up: Volume of the sarcoplasmic reticulum uptake compartment, units: nL
+      Vol_up : 0.0003969
 
 #     tau_Na: Time constant of diffusion of Na from the bulk medium to
-#     the extracellular cleft space
-      REAL(KIND=RKIND) :: tau_Na = 14.3_RKIND        # units: s
+#     the extracellular cleft space, units: s
+      tau_Na : 14.3
 
 #     tau_Na: Time constant of diffusion of K from the bulk medium to
-#     the extracellular cleft space
-      REAL(KIND=RKIND) :: tau_K = 10._RKIND          # units: s
+#     the extracellular cleft space, units: s
+      tau_K : 10.0
 
 #     tau_Ca: Time constant of diffusion of Ca from the bulk medium to
-#     the extracellular cleft space
-      REAL(KIND=RKIND) :: tau_Ca = 24.7_RKIND        # units: s
+#     the extracellular cleft space, units: s
+      tau_Ca : 24.7
 
 #     tau_di: Time constant of diffusion of Na from the restricted
-#     subsarcolemmal space to the cytosol
-      REAL(KIND=RKIND) :: tau_di = 0.01_RKIND        # units: s
+#     subsarcolemmal space to the cytosol, units: s
+      tau_di : 0.01
 
-#     Ibar_NaK: Maximum Na-K pump current
-      REAL(KIND=RKIND) :: Ibar_NaK = 70.8253_RKIND   # units: pA
+#     Ibar_NaK: Maximum Na-K pump current, units: pA
+      Ibar_NaK : 70.8253
 
-#     K_NaK,K: Half-maximum K binding concentration for I_NaK
-      REAL(KIND=RKIND) :: K_NaK_K = 1._RKIND         # units: mmol/L
+#     K_NaK,K: Half-maximum K binding concentration for I_NaK, units: mmol/L
+      K_NaK_K : 1.0
 
-#     K_NaK,Na: Half-maximum Na binding concentration for I_NaK
-      REAL(KIND=RKIND) :: K_NaK_Na = 11._RKIND       # units: mmol/L
+#     K_NaK,Na: Half-maximum Na binding concentration for I_NaK, units: mmol/L
+      K_NaK_Na : 11.0
 
-#     Ibar_CaP: Maximum Ca pump current
-      REAL(KIND=RKIND) :: Ibar_CaP = 4._RKIND        # units: pA
+#     Ibar_CaP: Maximum Ca pump current, units: pA
+      Ibar_CaP : 4.0
 
-#     K_CaP: Half-maximum Ca binding concentration for I_CaP
-      REAL(KIND=RKIND) :: K_CaP = 0.0002_RKIND       # units: mmol/L
+#     K_CaP: Half-maximum Ca binding concentration for I_CaP, units: mmol/L
+      K_CaP : 0.0002
 
-#     K_NaCa: Scaling factor for I_NaCa
-      REAL(KIND=RKIND) :: K_NaCa = 0.0374842_RKIND   # units: pA/(mmol/L)^4
+#     K_NaCa: Scaling factor for I_NaCa, units: pA/(mmol/L)^4
+      K_NaCa : 0.0374842
 
 #     gamma: Position of energy barrier controlling voltage dependence
-#     of I_NaCa
-      REAL(KIND=RKIND) :: gamma = 0.45_RKIND         # dimensionless
+#     of I_NaCa, dimensionless
+      gamma : 0.45
 
-#     d_NaCa: Denominator constant for I_NaCa
-      REAL(KIND=RKIND) :: d_NaCa = 0.0003_RKIND      # units: (mmol/L)^{-4}
+#     d_NaCa: Denominator constant for I_NaCa, units: (mmol/L)^{-4}
+      d_NaCa : 0.0003
 
-#     phi_Na,en: Electroneutral Na influx
-      REAL(KIND=RKIND) :: phi_Na_en = -1.68_RKIND    # units: pA
+#     phi_Na,en: Electroneutral Na influx, units: pA
+      phi_Na_en : -1.68
 
-#     Ibar_up: Maximum sarcoplasmic reticulum uptake current
-      REAL(KIND=RKIND) :: Ibar_up = 2800._RKIND      # units: pA
+#     Ibar_up: Maximum sarcoplasmic reticulum uptake current, units: pA
+      Ibar_up : 2800.0
 
-#     K_cyca: Half-maximum binding concentration for Ca_i to I_up
-      REAL(KIND=RKIND) :: K_cyca = 0.0003_RKIND      # units: mmol/L
+#     K_cyca: Half-maximum binding concentration for Ca_i to I_up, units: mmol/L
+      K_cyca : 0.0003
 
-#     K_srca: Half-maximum binding concentration for Ca_up to I_up
-      REAL(KIND=RKIND) :: K_srca = 0.5_RKIND         # units: mmol/L
+#     K_srca: Half-maximum binding concentration for Ca_up to I_up, units: mmol/L
+      K_srca : 0.5
 
-#     K_xcs: Ratio of forward to back reactions for I_up
-      REAL(KIND=RKIND) :: K_xcs = 0.4_RKIND          # dimensionless
+#     K_xcs: Ratio of forward to back reactions for I_up, dimensionless
+      K_xcs : 0.4
 
 #     tau_tr: Time constant of diffusion ("translocation") of Ca from
-#     sarcoplasmic reticulum uptake to release compartment
-      REAL(KIND=RKIND) :: tau_tr = 0.01_RKIND        # units: s
+#     sarcoplasmic reticulum uptake to release compartment, units: s
+      tau_tr : 0.01
 
-#     alpha_rel: Scaling factor for I_rel
-      REAL(KIND=RKIND) :: alpha_rel = 200000._RKIND  # units: pA L/mmol
+#     alpha_rel: Scaling factor for I_rel, units: pA L/mmol
+      alpha_rel : 200000.0
 
-#     K_rel,i: Half-activation Ca_i for I_rel
-      REAL(KIND=RKIND) :: K_rel_i = 0.0003_RKIND     # units: mmol/L
+#     K_rel,i: Half-activation Ca_i for I_rel, units: mmol/L
+      K_rel_i : 0.0003
 
-#     K_rel,d: Half-activation Ca_d for I_rel
-      REAL(KIND=RKIND) :: K_rel_d = 0.003_RKIND      # units: mmol/L
+#     K_rel,d: Half-activation Ca_d for I_rel, units: mmol/L
+      K_rel_d : 0.003
+
 #     r_recov: Recovery rate constant for the sarcoplasmic reticulum
-#     release channel
-      REAL(KIND=RKIND) :: r_recov = 0.815_RKIND      # units: s^{-1}
+#     release channel, units: s^{-1}
+      r_recov : 0.815
 
 #-----------------------------------------------------------------------
 #     Maximum Conductance Values
-#     P_Na: Permeability for I_Na
-      REAL(KIND=RKIND) :: P_Na = 0.0016_RKIND        # units: nL/s
+#     P_Na: Permeability for I_Na, units: nL/s
+      P_Na : 0.0016
 
-#     Gbar_Ca,L: Maximum conductance for I_Ca,L
-      REAL(KIND=RKIND) :: Gbar_CaL = 6.75_RKIND      # units: nS
+#     Gbar_Ca,L: Maximum conductance for I_Ca,L, units: nS
+      Gbar_CaL : 6.75
 
-#     Gbar_t: Maximum conductance for I_t
-      REAL(KIND=RKIND) :: Gbar_t = 7.5_RKIND         # units: nS
+#     Gbar_t: Maximum conductance for I_t, units: nS
+      Gbar_t : 7.5
 
-#     Gbar_sus: Maximum conductance for I_sus
-      REAL(KIND=RKIND) :: Gbar_sus = 2.75_RKIND      # units: nS
+#     Gbar_sus: Maximum conductance for I_sus, units: nS
+      Gbar_sus : 2.75
 
-#     Gbar_K,s: Maximum conductance for I_K,s
-      REAL(KIND=RKIND) :: Gbar_Ks = 1._RKIND         # units: nS
+#     Gbar_K,s: Maximum conductance for I_K,s, units: nS
+      Gbar_Ks : 1.0
 
-#     Gbar_K,r: Maximum conductance for I_K,r
-      REAL(KIND=RKIND) :: Gbar_Kr = 0.5_RKIND        # units: nS
+#     Gbar_K,r: Maximum conductance for I_K,r, units: nS
+      Gbar_Kr : 0.5
 
-#     Gbar_K1: Maximum conductance for I_K1
-      REAL(KIND=RKIND) :: Gbar_K1 = 3._RKIND         # units: nS
+#     Gbar_K1: Maximum conductance for I_K1, units: nS
+      Gbar_K1 : 3.0
 
-#     Gbar_B,Na: Maximum conductance for I_B,Na
-      REAL(KIND=RKIND) :: Gbar_BNa = 0.060599_RKIND  # units: nS
+#     Gbar_B,Na: Maximum conductance for I_B,Na, units: nS
+      Gbar_BNa : 0.060599
 
-#     Gbar_B,Ca: Maximum conductance for I_B,Ca
-      REAL(KIND=RKIND) :: Gbar_BCa = 0.078681_RKIND  # units: nS
+#     Gbar_B,Ca: Maximum conductance for I_B,Ca, units: nS
+      Gbar_BCa : 0.078681
 
 #-----------------------------------------------------------------------
-#     Resting potential
-      REAL(KIND=RKIND) :: Vrest = -75.0_RKIND        # units: mV
+#     Resting potential, units: mV
+      Vrest : -75.0
 
 #-----------------------------------------------------------------------
 #     Scaling factors
 #     Voltage scaling
-      REAL(KIND=RKIND) :: Vscale  = 1._RKIND
+      Vscale  : 1.0
 
 #     Time scaling
-      REAL(KIND=RKIND) :: Tscale  = 1._RKIND
+      Tscale  : 1.0
 
 #     Voltage offset parameter
-      REAL(KIND=RKIND) :: Voffset = 0._RKIND
+      Voffset : 0.0
+
 ########################################################################

@@ -82,7 +82,7 @@ c     Load inputs from list
 
       CASE ("nyg","nygren")
          cep%cepType = cepModel_NYG
-         nX = 18
+         nX = 17
          nG = 12
 
       CASE DEFAULT

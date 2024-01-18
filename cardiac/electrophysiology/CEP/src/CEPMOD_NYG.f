@@ -57,9 +57,6 @@
       X(15)  =  0.1961_RKIND      ! O_TMgC  (dimensionless)
       X(16)  =  0.7094_RKIND      ! O_TMgMg (dimensionless)
       X(17)  =  0.4369_RKIND      ! O_Calse (dimensionless)
-      X(18)  =  0.045_RKIND*X(13) ! O       (dimensionless)
-     2       +  0.08_RKIND *X(14)
-     3       +  0.16_RKIND *X(15)
 
 !     Initialize gating variables
       Xg(1)  =  3.2017E-3_RKIND   ! m       (dimensionless)
@@ -215,7 +212,7 @@
       REAL(KIND=RKIND), INTENT(OUT) :: dX(nX)
       REAL(KIND=RKIND), INTENT(INOUT) :: RPAR(20)
 
-      REAL(KIND=RKIND) :: RT, n1, n2, n3, d1, d2, d3, I_sac
+      REAL(KIND=RKIND) :: RT, n1, n2, n3, d1, d2, d3, I_sac, dOdt
 
 !     Local copies of state variables
       V       = X(1)
@@ -280,8 +277,8 @@
 !     I_Na: Na current
       n1    = P_Na*(gm**3._RKIND)
       n2    = 0.9_RKIND*gh_1 + 0.1_RKIND*gh_2
-      n3    = Na_c*V*F*(EXP((V-E_Na)/RT)-1._RKIND)
-      d1    = RT*(EXP(V/RT)-1._RKIND)
+      n3    = Na_c*V*F*(EXP((V-E_Na)/RT) - 1._RKIND)
+      d1    = RT*(EXP(V/RT) - 1._RKIND)
       I_Na  = n1*n2*n3/d1
 
 !     I_Ca: L-type Ca current
@@ -316,7 +313,7 @@
 !     I_NaK: Na-K pump current
       n1    = Ibar_NaK * K_c * (Na_i**1.5_RKIND) * (V+150._RKIND)
       d1    = K_c + K_NaK_K
-      d2    = (Na_i)**1.5_RKIND + (K_NaK_K)**1.5_RKIND
+      d2    = (Na_i)**1.5_RKIND + (K_NaK_Na)**1.5_RKIND
       d3    = V + 200._RKIND
       I_NaK = n1 / (d1*d2*d3)
 
@@ -344,14 +341,16 @@
 !     I_rel: Ca induced Ca current (CICR)
       n1    = alpha_rel * (Ca_rel - Ca_i)
       n2    = F_2 / (F_2 + 0.25_RKIND)
-      n2    = n2*n2
-      I_rel = n1*n2
+      I_rel = n1*n2*n2
 
 !-----------------------------------------------------------------------
 !     Now compute time derivatives of the state variables:
 !     dV/dt: includes stimulus and stretch-activated currents
-      dX(1)  = -(I_Na + I_CaL + I_t + I_sus + I_K1 + I_BNa + I_BCa
-     2       +   I_NaK + I_CaP + I_NaCa - I_stim - I_sac) / Cm
+!      dX(1)  = -(I_Na + I_CaL + I_t + I_sus + I_K1 + I_BNa + I_BCa
+!     2       +   I_NaK + I_CaP + I_NaCa + I_stim)/Cm +  I_sac
+!     CellML modification for dV/dt
+      dX(1) = -(I_Na + I_CaL + I_t + I_sus + I_K1 + I_Kr + I_Ks + I_BNa
+     2      +   I_BCa + I_NaK + I_CaP + I_NaCa + I_stim)/Cm +  I_sac
 
 !     dNa_c/dt
       n1     = Na_b - Na_c
@@ -390,7 +389,9 @@
       dX(7)  = n1/d1
 
 !     dCa_d/dt
-      dX(8)  = -(I_CaL-I_di) / (2._RKIND*Vol_d*F)
+!      dX(8)  = -(I_CaL-I_di) / (2._RKIND*Vol_d*F)
+!     CellML modification for dCa_d/dt
+      dX(8)  = -(I_CaL+I_di) / (2._RKIND*Vol_d*F)
 
 !     dCa_up/dt
       dX(9)  = (I_up-I_tr) / (2._RKIND*Vol_up*F)
@@ -399,19 +400,13 @@
       dX(10) = (I_tr-I_rel) / (2._RKIND*Vol_rel*F)
 
 !     dF_1/dt
-      dX(11)  = r_recov*(1._RKIND-X(11)-X(12)) - r_act*X(11)
+      dX(11)  = r_recov*(1._RKIND - F_1 - F_2) - r_act*F_1
 
 !     dF_2/dt
-      dX(12)  = r_act*X(11) - r_inact*X(12)
+      dX(12)  = r_act*F_1 - r_inact*F_2
 
 !-----------------------------------------------------------------------
 !     Now compute time derivatives of the occupancy variables:
-      O_C     = X(13)
-      O_TC    = X(14)
-      O_TMgC  = X(15)
-      O_TMgMg = X(16)
-      O_Calse = X(17)
-
 !     dO_C/dt
       dX(13) = 2.E5_RKIND*Ca_i*(1._RKIND-O_C) - 476._RKIND*O_C
 
@@ -431,9 +426,8 @@
       dX(10) = dX(10) - 31._RKIND*dX(17)
 
 !     dO/dt
-      dX(18) = 0.045_RKIND*dX(13) + 0.08_RKIND*dX(14)
-     2       + 0.16_RKIND*dX(15)
-      dX(7)  = dX(7) - dX(18)
+      dOdt  = 0.045_RKIND*dX(13) + 0.08_RKIND*dX(14) + 0.16_RKIND*dX(15)
+      dX(7) = dX(7) - dOdt
 
 !     Quantities to be written to file
       RPAR(3)  = I_Na
@@ -530,14 +524,13 @@
       a     = V/30._RKIND
       e2    = EXP(-a*a)
       rbar  = 1._RKIND / (1._RKIND + e1)
-      tau_r = 3.5E-3_RKIND*e2 + 1.5E-4_RKIND
+      tau_r = 3.5E-3_RKIND*e2 + 1.5E-3_RKIND
       Xg(7) = rbar - (rbar - gr)*EXP(-dt/tau_r)
 
 !     s: inactivation gating variable for I_t
       e1    = EXP((V+40.5_RKIND)/11.5_RKIND)
       a     = (V+52.45)/14.97_RKIND
       e2    = EXP(-a*a)
-
       sbar  = 1._RKIND / (1._RKIND + e1)
       tau_s = 0.4812_RKIND*e2 + 0.01414_RKIND
       Xg(8) = sbar - (sbar - gs)*EXP(-dt/tau_s)
@@ -545,15 +538,13 @@
 !     r_sus: activation gating variable for I_sus
       e1       = EXP(-(V+4.3_RKIND)/8._RKIND)
       e2       = EXP((V+5._RKIND)/12._RKIND)
-
       rbar_sus = 1._RKIND / (1._RKIND + e1)
-      tau_rsus = (9.E-4_RKIND/(1._RKIND+e2)) + 5.E-4_RKIND
+      tau_rsus = (9.E-3_RKIND/(1._RKIND+e2)) + 5.E-4_RKIND
       Xg(9)    = rbar_sus - (rbar_sus - gr_sus)*EXP(-dt/tau_rsus)
 
 !     s_sus: inactivation gating variable for I_sus
       e1       = EXP((V+20._RKIND)/10._RKIND)
       e2       = EXP((V+60._RKIND)/10._RKIND)
-
       sbar_sus = (0.4_RKIND/(1._RKIND + e1)) + 0.6_RKIND
       tau_ssus = (0.047_RKIND/(1._RKIND + e2)) + 0.3_RKIND
       Xg(10)   = sbar_sus - (sbar_sus - gs_sus)*EXP(-dt/tau_ssus)
@@ -562,7 +553,6 @@
       e1     = EXP(-(V-19.9_RKIND)/12.7_RKIND)
       a      = (V-20._RKIND)/20._RKIND
       e2     = EXP(-a*a)
-
       nbar   = 1._RKIND / (1._RKIND + e1)
       tau_n  = 0.7_RKIND + 0.4_RKIND*e2
       Xg(11) = nbar - (nbar - gn)*EXP(-dt/tau_n)
@@ -571,7 +561,6 @@
       e1     = EXP(-(V+15._RKIND)/6._RKIND)
       a      = (V+20.1376_RKIND) / 22.1996_RKIND
       e2     = EXP(-a*a)
-
       pbar_a = 1._RKIND / (1._RKIND + e1)
       tau_pa = 0.03118_RKIND + 0.21718_RKIND*e2
       Xg(12) = pbar_a - (pbar_a - gp_a)*EXP(-dt/tau_pa)

@@ -27,9 +27,11 @@
 !     Mg_i: Mg concentration in the intracellular medium
       REAL(KIND=RKIND) :: Mg_i = 2.5_RKIND           ! units: mmol/L
 !     E_Ca,app: Apparent reversal potential for I_Ca,L
-      REAL(KIND=RKIND) :: E_Ca_app = 60_RKIND        ! units: mV
+      REAL(KIND=RKIND) :: E_Ca_app = 60._RKIND        ! units: mV
 !     K_Ca: Half-maximum Ca^2+ binding concentration for f_Ca
-      REAL(KIND=RKIND) :: K_Ca = 0.25_RKIND          ! units: mmol/L
+!     Note that K_Ca=0.25mmol/L in the paper, but K_Ca=0.025mmol/L
+!     in CellML repository
+      REAL(KIND=RKIND) :: K_Ca = 0.025_RKIND         ! units: mmol/L
 !     R: Universal Gas constant
       REAL(KIND=RKIND) :: R = 8314._RKIND            ! units: mJ/mol/K
 !     T: Absolute temperature

@@ -95,7 +95,7 @@
          X(1)   = -86.709_RKIND     ! V      (units: mV)
          X(2)   =  138.4_RKIND      ! K_i    (units: mM)
          X(3)   =  10.355_RKIND     ! Na_i   (units: mM)
-         X(4)   =  1.3E-4_RKIND    ! Ca_i   (units: mM)
+         X(4)   =  1.3E-4_RKIND     ! Ca_i   (units: mM)
          X(5)   =  3.6E-4_RKIND     ! Ca_ss  (units: mM)
          X(6)   =  3.715_RKIND      ! Ca_sr  (units: mM)
          X(7)   =  0.9068_RKIND     ! R'     (dimensionless)
