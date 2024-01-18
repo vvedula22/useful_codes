@@ -431,21 +431,21 @@
 
 !     Quantities to be written to file
       RPAR(3)  = I_Na
-      RPAR(4)  = I_K1
+      RPAR(4)  = I_CaL
       RPAR(5)  = I_t
       RPAR(6)  = I_sus
-      RPAR(7)  = I_K1
-      RPAR(8)  = I_BNa
-      RPAR(9)  = I_BCa
-      RPAR(10) = I_NaK
-      RPAR(11) = I_CaP
-      RPAR(12) = I_NaCa
-      RPAR(13) = I_Ks
-      RPAR(14) = I_Kr
-      RPAR(15) = I_di
-      RPAR(16) = I_up
-      RPAR(17) = I_tr
-      RPAR(18) = I_rel
+      RPAR(7)  = I_Ks
+      RPAR(8)  = I_Kr
+      RPAR(9)  = I_K1
+      RPAR(10) = I_bNa
+      RPAR(11) = I_bCa
+      RPAR(12) = I_NaK
+      RPAR(13) = I_CaP
+      RPAR(14) = I_NaCa
+      RPAR(15) = I_up
+      RPAR(16) = I_tr
+      RPAR(17) = I_rel
+      RPAR(18) = I_di
       RPAR(19) = I_stim
       RPAR(20) = I_sac
 
