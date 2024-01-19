@@ -85,6 +85,11 @@ c     Load inputs from list
          nX = 17
          nG = 12
 
+      CASE ("pfib","purkinje")
+         cep%cepType = cepModel_PFIB
+         nX = 7
+         nG = 13
+
       CASE DEFAULT
          err = " Unknown electrophysiology model"
       END SELECT
@@ -237,6 +242,11 @@ c     Check inputs for any inconsistencies
       IF (flag .AND. cep%cepType.EQ.cepModel_NYG) THEN
          err = " Excitation-contraction coupling is not allowed for "//
      2      " Nygren model"
+      END IF
+
+      IF (flag .AND. cep%cepType.EQ.cepModel_PFIB) THEN
+         err = " Excitation-contraction coupling is not allowed for "//
+     2      " Stewart's model"
       END IF
 
       IF (cep%cepType.EQ.cepModel_AP .AND. cep%ec%astrain) THEN

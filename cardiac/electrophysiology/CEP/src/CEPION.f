@@ -128,6 +128,21 @@
             CALL NYG_READPARFF(fparam_in)
          END IF
 
+      CASE (cepModel_PFIB)
+!        Clear log file
+         WRITE(oFile,'(A)') "log_PFIB.txt"
+         CALL CTXT(oFile)
+
+!        Initialize state variables
+         std = " Initializing Stewart's model for Purkinje fiber cells"
+         CALL PFIB_INIT(nX, nG, X, Xg)
+
+!        Overwrite parameters with user-provided input file
+         IF (init_param_file) THEN
+            std = " Reading parameters from input file"
+            CALL PFIB_READPARFF(fparam_in)
+         END IF
+
       END SELECT
 
       RETURN
@@ -158,6 +173,9 @@
          no = no + 18
          ALLOCATE(RPAR(20))
       ELSE IF (cep%cepType .EQ. cepModel_NYG) THEN
+         no = no + 18
+         ALLOCATE(RPAR(20))
+      ELSE IF (cep%cepType .EQ. cepModel_PFIB) THEN
          no = no + 18
          ALLOCATE(RPAR(20))
       ELSE
@@ -1160,6 +1178,85 @@
                   j = NINT(REAL((k-1)*nTS,KIND=8)/5.0D0)
                END IF
             END DO
+         END SELECT
+
+      CASE (cepModel_PFIB)
+!        Time integrator
+         SELECT CASE (cep%odes%tIntType)
+         CASE (tIntType_FE)
+!           Time loop
+            j   = 1
+            k   = 1
+            cTS = 0._RKIND
+            DO i=1, nTS
+!              Get stimulus current
+               CALL GET_STIM_AMP(cTS, cep, Istim, flag)
+               IF (flag) RETURN
+
+!              Integrate local state variables
+               CALL PFIB_INTEGFE(nX, nG, X, Xg, dt, Istim, Ksac, RPAR)
+
+!              Output quantities
+               Xo(1:nX) = X(1:nX)
+               Xo(nX+1:nX+18) = RPAR(3:20)
+
+!              Perform NaN check
+               IF (ISNAN(X(1))) THEN
+                  err = " NaN occurence (X). Aborted!"
+               END IF
+
+!              Time step advance
+               cTS = cTS + dt
+
+!              Write state variables to a log file
+               IF (MOD(i,iwrite) .EQ. 0)
+     2            CALL WTXT(oFile, no, Xo, cTS)
+
+!           Display progress
+               IF (i.EQ.j .AND. iProg) THEN
+                  WRITE(*,'(A)',ADVANCE='NO') (k-1)*20//"%  "
+                  k = k + 1
+                  j = NINT(REAL((k-1)*nTS,KIND=8)/5.0D0)
+               END IF
+            END DO
+
+         CASE (tIntType_RK4)
+!           Time loop
+            j   = 1
+            k   = 1
+            cTS = 0._RKIND
+            DO i=1, nTS
+!              Get stimulus current
+               CALL GET_STIM_AMP(cTS, cep, Istim, flag)
+               IF (flag) RETURN
+
+!              Integrate local state variables
+               CALL PFIB_INTEGRK(nX, nG, X, Xg, dt, Istim, Ksac, RPAR)
+
+!              Output quantities
+               Xo(1:nX) = X(1:nX)
+               Xo(nX+1:nX+18) = RPAR(3:20)
+
+!              Perform NaN check
+               IF (ISNAN(X(1))) THEN
+                  err = " NaN occurence (X). Aborted!"
+               END IF
+
+!              Time step advance
+               cTS = cTS + dt
+
+!              Write state variables to a log file
+               IF (MOD(i,iwrite) .EQ. 0)
+     2            CALL WTXT(oFile, no, Xo, cTS)
+
+!           Display progress
+               IF (i.EQ.j .AND. iProg) THEN
+                  WRITE(*,'(A)',ADVANCE='NO') (k-1)*20//"%  "
+                  k = k + 1
+                  j = NINT(REAL((k-1)*nTS,KIND=8)/5.0D0)
+               END IF
+            END DO
+
          END SELECT
 
       END SELECT

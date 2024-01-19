@@ -19,10 +19,12 @@
 
 !     Type of cardiac electrophysiology models: Aliev-Panfilov model,
 !     Bueno-Orovio-Cherry-Fenton model, Fitzhugh-Nagumo model,
-!     tenTusscher-Panfilov 2006 model, Nygren model
+!     tenTusscher-Panfilov 2006 model, Nygren model, Stewart's model for
+!     Purkinje fiber cells
       INTEGER(KIND=IKIND), PARAMETER :: cepModel_NA = 100,
      2   cepModel_DCPLD = 101, cepModel_AP = 102, cepModel_BO = 103,
-     3   cepModel_FN = 104, cepModel_TTP = 105, cepModel_NYG = 106
+     3   cepModel_FN = 104, cepModel_TTP = 105, cepModel_NYG = 106,
+     4   cepModel_PFIB = 107
 
 !     Time integration scheme: Forward-Euler, Runge-Kutta 4th order,
 !     Crank-Nicholson

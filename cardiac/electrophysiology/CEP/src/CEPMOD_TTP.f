@@ -1,8 +1,8 @@
 !-----------------------------------------------------------------------
 !
 !     This module defines data structures for tenTusscher-Panfilov
-!     cellular activation model for cardiac electrophysiology. Both
-!     active stress and active strain models are used for excitation-
+!     cellular activation model for ventricular myocytes. Both actove
+!     stress and active strain models are used for excitation-
 !     contraction coupling.
 !
 !     Reference for tenTusscher-Panfilov electrophysiology model:
