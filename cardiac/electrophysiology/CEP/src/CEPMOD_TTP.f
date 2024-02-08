@@ -546,7 +546,7 @@
          b   = 0.77_RKIND/(0.13_RKIND*(1._RKIND
      2       + EXP(-(10.66_RKIND+V)/11.1_RKIND)))
       ELSE
-         a   = 5.7E-2_RKIND*EXP(-(80._RKIND+V)/6.8_RKIND)
+         a   = 0.057_RKIND*EXP(-(80._RKIND+V)/6.8_RKIND)
          b   = 2.7_RKIND*EXP(0.079_RKIND*V)
      2       + 310000._RKIND*EXP(0.3485_RKIND*V)
       END IF
@@ -554,11 +554,10 @@
       Xg(5)  = hi - (hi - h)*EXP(-dt/tau)
 
 !     j: slow inactivation gate for I_Na
-      ji     = 1._RKIND/( (1._RKIND
-     2       + EXP((71.55_RKIND+V)/7.43_RKIND))**2._RKIND )
+      ji     = hi
       IF (V .GE. -40._RKIND) THEN
          a   = 0._RKIND
-         b   = 0.6_RKIND*EXP(5.7E-2_RKIND*V)
+         b   = 0.6_RKIND*EXP(0.057_RKIND*V)
      2       / (1._RKIND + EXP(-0.1_RKIND*(V+32._RKIND)))
       ELSE
          a   = -(25428._RKIND*EXP(0.2444_RKIND*V)

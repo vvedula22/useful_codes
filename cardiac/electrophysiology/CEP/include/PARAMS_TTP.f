@@ -39,18 +39,23 @@
 !     T: Temperature
       REAL(KIND=RKIND) :: Tc = 310._RKIND          ! units: K
 !     F: Faraday constant
+!     Note: F=96.4867 C/mmol in paper, but C=96485.3415 C/mmol in CellML
       REAL(KIND=RKIND) :: Fc = 96485.3415_RKIND    ! units: C/mmol
 !     Cm: Cell capacitance per unit surface area
+!     Note: Cm = 2.0 uF/cm2 in paper, but C = 0.185 uF in CellML
       REAL(KIND=RKIND) :: Cm = 0.185_RKIND         ! units: uF/cm^{2}
 !     sV: Surface to volume ratio
       REAL(KIND=RKIND) :: sV = 0.2_RKIND           ! units: um^{-1}
 !     rho: Cellular resistivity
       REAL(KIND=RKIND) :: rho = 162._RKIND         ! units: \Omega-cm
 !     V_c: Cytoplasmic volume
-      REAL(KIND=RKIND) :: V_c = 16.404E-3_RKIND    ! units: um^{3}
-!     V_sr: Sacroplasmic reticulum volume
-      REAL(KIND=RKIND) :: V_sr = 1.094E-3_RKIND    ! units: um^{3}
-!     V_ss: Subspace volume
+!     Note: V_c = 16.404 um3 in the paper
+      REAL(KIND=RKIND) :: V_c = 0.016404_RKIND    ! units: um^{3}
+!     V_sr: Sacroplasmic reticulum volume (value chosen from CellML)
+!     Note: V_sr = 1.094 um3 in the paper
+      REAL(KIND=RKIND) :: V_sr = 0.001094_RKIND    ! units: um^{3}
+!     V_ss: Subspace volume (value from CellML)
+!     Note: V_ss = 0.05468 um3 in the paper
       REAL(KIND=RKIND) :: V_ss = 5.468E-5_RKIND    ! units: um^{3}
 !     K_o: Extracellular K concentration
       REAL(KIND=RKIND) :: K_o = 5.4_RKIND          ! units: mM
@@ -76,7 +81,7 @@ c!     G_Ks for spiral wave breakup (epi)
 c      REAL(KIND=RKIND) :: G_Ks(3) =
 c     2   (/0.441_RKIND, 0.392_RKIND, 0.098_RKIND/)
 !     p_KNa: Relative I_Ks permeability to Na
-      REAL(KIND=RKIND) :: p_KNa = 3.E-2_RKIND      ! dimensionless
+      REAL(KIND=RKIND) :: p_KNa = 0.03_RKIND       ! dimensionless
 !     G_CaL: Maximal I_CaL conductance
       REAL(KIND=RKIND) :: G_CaL = 3.98E-5_RKIND    ! units: cm^{3}/uF/ms
 !     K_NaCa: Maximal I_NaCa
@@ -98,9 +103,7 @@ c     2   (/0.441_RKIND, 0.392_RKIND, 0.098_RKIND/)
 !     K_mNa: Na_i half-saturation constant of I_NaK
       REAL(KIND=RKIND) :: K_mNa = 40._RKIND        ! units: mM
 !     G_pK: Maximal I_pK conductance
-      REAL(KIND=RKIND) :: G_pK = 1.46E-2_RKIND     ! units: nS/pF
-c!     G_pK for spiral wave breakup
-c      REAL(KIND=RKIND) :: G_pK = 2.19E-3_RKIND     ! units: nS/pF
+      REAL(KIND=RKIND) :: G_pK = 0.0146_RKIND      ! units: nS/pF
 !     G_pCa: Maximal I_pCa conductance
       REAL(KIND=RKIND) :: G_pCa = 0.1238_RKIND     ! units: pA/pF
 c!     G_pCa for spiral wave breakup
@@ -112,19 +115,21 @@ c      REAL(KIND=RKIND) :: G_pCa = 0.8666_RKIND     ! units: pA/pF
 !     G_bCa: Maximal I_bCa conductance
       REAL(KIND=RKIND) :: G_bCa = 5.92E-4_RKIND    ! units: nS/pF
 !     Vmax_up: Maximal I_up conductance
-      REAL(KIND=RKIND) :: Vmax_up = 6.375E-3_RKIND ! units: mM/ms
+      REAL(KIND=RKIND) :: Vmax_up = 0.006375_RKIND ! units: mM/ms
 !     K_up: Half-saturation constant of I_up
       REAL(KIND=RKIND) :: K_up = 2.5E-4_RKIND      ! units: mM
 !     V_rel: Maximal I_rel conductance
+!     Note: V_rel=40.8 mM/ms in the paper, but V_rel=0.102 /ms in CellML
       REAL(KIND=RKIND) :: V_rel = 0.102_RKIND      ! units: mM/ms
 !     k1p: R to O and RI to I, I_rel transition rate
       REAL(KIND=RKIND) :: k1p = 0.15_RKIND         ! units: mM^{-2}/ms
 !     k2p: O to I and R to RI, I_rel transition rate
-      REAL(KIND=RKIND) :: k2p = 4.5E-2_RKIND       ! units: mM^{-1}/ms
+      REAL(KIND=RKIND) :: k2p = 0.045_RKIND        ! units: mM^{-1}/ms
 !     k3: O to R and I to RI, I_rel transition rate
-      REAL(KIND=RKIND) :: k3 = 6.E-2_RKIND         ! units: ms^{-1}
+      REAL(KIND=RKIND) :: k3 = 0.06_RKIND          ! units: ms^{-1}
 !     k4: I to O and Ri to I, I_rel transition rate
-      REAL(KIND=RKIND) :: k4 = 5.E-3_RKIND         ! units: ms^{-1}
+!         Note k4=1.5e-5 in paper, but k4=0.005 in CellML
+      REAL(KIND=RKIND) :: k4 = 0.005_RKIND         ! units: ms^{-1}
 !     EC: Ca_sr half-saturation constant of k_casr
       REAL(KIND=RKIND) :: EC = 1.5_RKIND           ! units: mM
 !     max_sr: Maximum value of k_casr
@@ -134,11 +139,11 @@ c      REAL(KIND=RKIND) :: G_pCa = 0.8666_RKIND     ! units: pA/pF
 !     V_leak: Maximal I_leak conductance
       REAL(KIND=RKIND) :: V_leak = 3.6E-4_RKIND    ! units: mM/ms
 !     V_xfer: Maximal I_xfer conductance
-      REAL(KIND=RKIND) :: V_xfer = 3.8E-3_RKIND    ! units: mM/ms
+      REAL(KIND=RKIND) :: V_xfer = 0.0038_RKIND    ! units: mM/ms
 !     Buf_c: Total cytoplasmic buffer concentration
       REAL(KIND=RKIND) :: Buf_c = 0.2_RKIND        ! units: mM
 !     K_bufc: Ca_i half-saturation constant for cytplasmic buffer
-      REAL(KIND=RKIND) :: K_bufc = 1.E-3_RKIND     ! units: mM
+      REAL(KIND=RKIND) :: K_bufc = 0.001_RKIND     ! units: mM
 !     Buf_sr: Total sacroplasmic buffer concentration
       REAL(KIND=RKIND) :: Buf_sr = 10._RKIND       ! units: mM
 !     K_bufsr: Ca_sr half-saturation constant for subspace buffer
@@ -203,6 +208,7 @@ c      REAL(KIND=RKIND) :: G_pCa = 0.8666_RKIND     ! units: pA/pF
       REAL(KIND=RKIND) :: E_K
       REAL(KIND=RKIND) :: E_Ca
       REAL(KIND=RKIND) :: E_Ks
+
 !     Cellular transmembrane currents
 !     I_Na: Fast sodium current
       REAL(KIND=RKIND) :: I_Na
@@ -256,7 +262,7 @@ c      REAL(KIND=RKIND) :: G_pCa = 0.8666_RKIND     ! units: pA/pF
       REAL(KIND=RKIND) :: d, di
       REAL(KIND=RKIND) :: f, fi
       REAL(KIND=RKIND) :: f2, f2i
-      REAL(KIND=RKIND) :: fcass, fcassi
+      REAL(KIND=RKIND) :: fCass, fCassi
       REAL(KIND=RKIND) :: s, si
       REAL(KIND=RKIND) :: r, ri
 

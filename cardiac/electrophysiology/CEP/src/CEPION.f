@@ -176,8 +176,8 @@
          no = no + 18
          ALLOCATE(RPAR(20))
       ELSE IF (cep%cepType .EQ. cepModel_PFIB) THEN
-         no = no + 18
-         ALLOCATE(RPAR(20))
+         no = no + 21
+         ALLOCATE(RPAR(23))
       ELSE
          ALLOCATE(RPAR(2))
       END IF
@@ -1198,7 +1198,7 @@
 
 !              Output quantities
                Xo(1:nX) = X(1:nX)
-               Xo(nX+1:nX+18) = RPAR(3:20)
+               Xo(nX+1:nX+21) = RPAR(3:23)
 
 !              Perform NaN check
                IF (ISNAN(X(1))) THEN
@@ -1235,7 +1235,7 @@
 
 !              Output quantities
                Xo(1:nX) = X(1:nX)
-               Xo(nX+1:nX+18) = RPAR(3:20)
+               Xo(nX+1:nX+21) = RPAR(3:23)
 
 !              Perform NaN check
                IF (ISNAN(X(1))) THEN

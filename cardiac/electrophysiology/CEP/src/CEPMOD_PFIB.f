@@ -1,7 +1,7 @@
 !-----------------------------------------------------------------------
 !
-!     This module defines data structures for the Stewart's
-!     cellular activation model for Purkinje fiber cells.
+!     This module defines subroutine and data structures for the
+!     Stewart's cellular activation model for Purkinje fiber cells.
 !
 !     Reference for Stewart's electrophysiology model:
 !        Stewart, P., et al., (2009). Mathematical models of the
@@ -107,14 +107,13 @@ c      Xg(13) =   0.0184308075_RKIND      ! y      (dimensionless)
       CALL GETRVAL(fid, "Tc", Tc)
       CALL GETRVAL(fid, "Fc", Fc)
       CALL GETRVAL(fid, "Cm", Cm)
-      CALL GETRVAL(fid, "sV", sV)
-      CALL GETRVAL(fid, "rho", rho)
       CALL GETRVAL(fid, "V_c", V_c)
       CALL GETRVAL(fid, "V_sr", V_sr)
       CALL GETRVAL(fid, "V_ss", V_ss)
       CALL GETRVAL(fid, "K_o", K_o)
       CALL GETRVAL(fid, "Na_o", Na_o)
       CALL GETRVAL(fid, "Ca_o", Ca_o)
+      CALL GETRVAL(fid, "G_Na", G_Na)
       CALL GETRVAL(fid, "G_K1", G_K1)
       CALL GETRVAL(fid, "G_to", G_to)
       CALL GETRVAL(fid, "G_sus", G_sus)
@@ -122,7 +121,6 @@ c      Xg(13) =   0.0184308075_RKIND      ! y      (dimensionless)
       CALL GETRVAL(fid, "G_fNa", G_fNa)
       CALL GETRVAL(fid, "G_Kr", G_Kr)
       CALL GETRVAL(fid, "G_Ks", G_Ks)
-      CALL GETRVAL(fid, "G_Na", G_Na)
       CALL GETRVAL(fid, "p_KNa", p_KNa)
       CALL GETRVAL(fid, "G_CaL", G_CaL)
       CALL GETRVAL(fid, "K_NaCa", K_NaCa)
@@ -173,7 +171,7 @@ c      Xg(13) =   0.0184308075_RKIND      ! y      (dimensionless)
       SUBROUTINE PFIB_INTEGFE(nX, nG, X, Xg, dt, Istim, Ksac, RPAR)
       IMPLICIT NONE
       INTEGER(KIND=IKIND), INTENT(IN) :: nX, nG
-      REAL(KIND=RKIND), INTENT(INOUT) :: X(nX), Xg(nG), RPAR(20)
+      REAL(KIND=RKIND), INTENT(INOUT) :: X(nX), Xg(nG), RPAR(23)
       REAL(KIND=RKIND), INTENT(IN) :: dt, Istim, Ksac
 
       REAL(KIND=RKIND) :: f(nX)
@@ -194,7 +192,7 @@ c      Xg(13) =   0.0184308075_RKIND      ! y      (dimensionless)
       SUBROUTINE PFIB_INTEGRK(nX, nG, X, Xg, dt, Istim, Ksac, RPAR)
       IMPLICIT NONE
       INTEGER(KIND=IKIND), INTENT(IN) :: nX, nG
-      REAL(KIND=RKIND), INTENT(INOUT) :: X(nX), Xg(nG), RPAR(20)
+      REAL(KIND=RKIND), INTENT(INOUT) :: X(nX), Xg(nG), RPAR(23)
       REAL(KIND=RKIND), INTENT(IN) :: dt, Istim, Ksac
 
       REAL(KIND=RKIND) :: dt6, Xrk(nX), Xgr(nG), frk(nX,4)
@@ -237,10 +235,9 @@ c      Xg(13) =   0.0184308075_RKIND      ! y      (dimensionless)
       INTEGER(KIND=IKIND), INTENT(IN) :: nX, nG
       REAL(KIND=RKIND), INTENT(IN) :: X(nX), Xg(nG), I_stim, K_sac
       REAL(KIND=RKIND), INTENT(OUT) :: dX(nX)
-      REAL(KIND=RKIND), INTENT(INOUT) :: RPAR(20)
+      REAL(KIND=RKIND), INTENT(INOUT) :: RPAR(23)
 
-      REAL(KIND=RKIND) :: RT, a, b, tau, sq5, e1, e2, e3, e4, n1, n2,
-     2   d1, d2, d3, I_sac
+      REAL(KIND=RKIND) :: RT, a, b, e1, e2, n1, n2, d1, d2, d3, I_sac
 
 !     Local copies of state variables
       V     = X(1)
@@ -283,18 +280,12 @@ c      Xg(13) =   0.0184308075_RKIND      ! y      (dimensionless)
       I_to = G_to * r * s * (V - E_K)
 
 !     I_K1: inward rectifier outward current
-      e1   = EXP(0.06_RKIND*(V - E_K - 200._RKIND))
-      e2   = EXP(2.E-4_RKIND*(V - E_K + 100._RKIND))
-      e3   = EXP(0.1_RKIND*(V - E_K - 10._RKIND))
-      e4   = EXP(-0.5_RKIND*(V - E_K))
-      a    = 0.1_RKIND/(1._RKIND + e1)
-      b    = (3._RKIND*e2 + e3) / (1._RKIND + e4)
-      tau  = a / (a + b)
-      sq5  = SQRT(K_o/5.4_RKIND)
-      I_K1 = G_K1 * sq5 * tau * (V - E_K)
+      e1   = EXP(0.1_RKIND*(V+75.44_RKIND))
+      a    = 1._RKIND / (1._RKIND + e1)
+      I_K1 = G_K1 * a * (V - 8._RKIND - E_K)
 
 !     I_Kr: rapid delayed rectifier current
-      I_Kr = G_Kr * sq5 * xr1 * xr2 * (V - E_K)
+      I_Kr = G_Kr * SQRT(K_o/5.4_RKIND) * xr1 * xr2 * (V - E_K)
 
 !     I_Ks: slow delayed rectifier current
       I_Ks = G_Ks * (xs**2._RKIND) * (V - E_Ks)
@@ -353,18 +344,29 @@ c      Xg(13) =   0.0184308075_RKIND      ! y      (dimensionless)
 !     I_xfer: diffusive Ca current between Ca subspae and cytoplasm
       I_xfer = V_xfer * (Ca_ss - Ca_i)
 
+!     I_sus: sustained current
+      e1    = EXP((5._RKIND-V)/17._RKIND)
+      a     = 1._RKIND / (1._RKIND + e1)
+      I_sus = G_sus * a * (V - E_K)
+
+!     I_f: hyperpolarization-activated currents
+      I_fNa = G_fNa * y * (V - E_Na)
+      I_fK  = G_fK * y * (V - E_K)
+      I_f   = I_fNa + I_fK
+
 !-----------------------------------------------------------------------
 !     Now compute time derivatives
 !     dV/dt: rate of change of transmembrane voltage
       dX(1)  = -(I_Na + I_to + I_K1 + I_Kr + I_Ks + I_CaL + I_NaCa +
-     2   I_NaK + I_pCa + I_pK + I_bCa + I_bNa + I_stim) + I_sac
+     2   I_NaK + I_pCa + I_pK + I_bCa + I_bNa + I_sus + I_f + I_stim) +
+     3   I_sac
 
 !     dK_i/dt
       dX(2)  = -(Cm/(V_c*Fc)) * (I_K1 + I_to + I_Kr + I_Ks + I_pK -
-     2   2._RKIND*I_NaK + I_stim)
+     2   2._RKIND*I_NaK + I_fK + I_sus + I_stim)
 
 !     dNa_i/dt
-      dX(3)  = -(Cm/(V_c*Fc)) * (I_Na + I_bNa +
+      dX(3)  = -(Cm/(V_c*Fc)) * (I_Na + I_bNa + I_fNa +
      2   3._RKIND*(I_NaK + I_NaCa))
 
 !     dCa_i/dt
@@ -405,8 +407,11 @@ c      Xg(13) =   0.0184308075_RKIND      ! y      (dimensionless)
       RPAR(16) = I_up
       RPAR(17) = I_rel
       RPAR(18) = I_xfer
-      RPAR(19) = I_stim
-      RPAR(20) = I_sac
+      RPAR(19) = I_sus
+      RPAR(20) = I_fNa
+      RPAR(21) = I_fK
+      RPAR(22) = I_stim
+      RPAR(23) = I_sac
 
       RETURN
       END SUBROUTINE PFIB_GETF
@@ -475,7 +480,7 @@ c      Xg(13) =   0.0184308075_RKIND      ! y      (dimensionless)
          b   = 0.77_RKIND/(0.13_RKIND*(1._RKIND
      2       + EXP(-(10.66_RKIND+V)/11.1_RKIND)))
       ELSE
-         a   = 5.7E-2_RKIND*EXP(-(80._RKIND+V)/6.8_RKIND)
+         a   = 0.057_RKIND*EXP(-(80._RKIND+V)/6.8_RKIND)
          b   = 2.7_RKIND*EXP(0.079_RKIND*V)
      2       + 310000._RKIND*EXP(0.3485_RKIND*V)
       END IF
@@ -483,11 +488,10 @@ c      Xg(13) =   0.0184308075_RKIND      ! y      (dimensionless)
       Xg(5)  = hi - (hi - h)*EXP(-dt/tau)
 
 !     j: slow inactivation gate for I_Na
-      ji     = 1._RKIND/( (1._RKIND
-     2       + EXP((71.55_RKIND+V)/7.43_RKIND))**2._RKIND )
+      ji     = hi
       IF (V .GE. -40._RKIND) THEN
          a   = 0._RKIND
-         b   = 0.6_RKIND*EXP(5.7E-2_RKIND*V)
+         b   = 0.6_RKIND*EXP(0.057_RKIND*V)
      2       / (1._RKIND + EXP(-0.1_RKIND*(V+32._RKIND)))
       ELSE
          a   = -(25428._RKIND*EXP(0.2444_RKIND*V)
@@ -515,8 +519,6 @@ c      Xg(13) =   0.0184308075_RKIND      ! y      (dimensionless)
       c      = 180._RKIND/(1._RKIND + EXP((30._RKIND+V)/10._RKIND))
      2       + 20._RKIND
       tau    = a + b + c
-c!     for spiral wave breakup
-c      IF (V .GT. 0._RKIND) tau = tau*2._RKIND
       Xg(8)  = fi - (fi - f)*EXP(-dt/tau)
 
 !     f2: fast inactivation gate for I_CaL
@@ -535,23 +537,24 @@ c      IF (V .GT. 0._RKIND) tau = tau*2._RKIND
       Xg(10) = fcassi - (fcassi - fcass)*EXP(-dt/tau)
 
 !     s: inactivation gate for I_to
-      IF (i.EQ.1 .OR. i.EQ.3) THEN
-         si  = 1._RKIND/(1._RKIND + EXP((20._RKIND+V)/5._RKIND))
-         tau = 85._RKIND*EXP(-((V+45._RKIND)**2._RKIND) /320._RKIND)
-     2       + 5._RKIND/(1._RKIND+EXP((V-20._RKIND)/5._RKIND))
-     3       + 3._RKIND
-      ELSE IF (i .EQ. 2) THEN
-         si  = 1._RKIND/(1._RKIND + EXP((28._RKIND+V)/5._RKIND))
-         tau = 1000._RKIND*EXP(-((V+67._RKIND)**2._RKIND) /1000._RKIND)
-     2       + 8._RKIND
-      END IF
+      si  = 1._RKIND/(1._RKIND + EXP((27._RKIND+V)/13._RKIND))
+      tau = 85._RKIND*EXP(-((V+25._RKIND)**2._RKIND) /320._RKIND)
+     2    + 5._RKIND/(1._RKIND+EXP((V-40._RKIND)/5._RKIND))
+     3    + 42._RKIND
       Xg(11) = si - (si - s)*EXP(-dt/tau)
 
 !     r: activation gate for I_to
-      ri     = 1._RKIND/(1._RKIND + EXP((20._RKIND-V)/6._RKIND))
-      tau    = 9.5_RKIND*EXP(-((V+40._RKIND)**2._RKIND) /1800._RKIND)
-     2       + 0.8_RKIND
+      ri     = 1._RKIND/(1._RKIND + EXP((20._RKIND-V)/13._RKIND))
+      tau    = 10.45_RKIND*EXP(-((V+40._RKIND)**2._RKIND) /1800._RKIND)
+     2       + 7.3_RKIND
       Xg(12) = ri - (ri - r)*EXP(-dt/tau)
+
+!     y: activation gate for I_f (I_fNa, I_fK)
+      yi     = 1._RKIND/(1._RKIND + EXP((80.6_RKIND+V)/6.8_RKIND))
+      a      = EXP(-2.9_RKIND - 0.04_RKIND*V)
+      b      = EXP(3.6_RKIND + 0.11_RKIND*V)
+      tau    = 4000._RKIND / (a + b)
+      Xg(13) = yi - (yi - y)*EXP(-dt/tau)
 
       RETURN
       END SUBROUTINE PFIB_UPDATEG
@@ -628,41 +631,5 @@ c      IF (V .GT. 0._RKIND) tau = tau*2._RKIND
       RETURN
       END FUNCTION ADJUSTC
 !-----------------------------------------------------------------------
-      SUBROUTINE PARSESTR(strng, toks, ntoks)
-      IMPLICIT NONE
-      CHARACTER(LEN=*), INTENT(IN) :: strng
-      CHARACTER(LEN=*), DIMENSION(1024), INTENT(OUT) :: toks
-      INTEGER(KIND=IKIND), INTENT(OUT) :: ntoks
-
-      INTEGER(KIND=IKIND) :: i, j, slen
-      CHARACTER(LEN=stdL) :: dlmtr, token
-
-      dlmtr = ''
-      token = ''
-
-      dlmtr = '< (,=")>'
-      ntoks = 1
-      slen  = LEN(TRIM(strng))
-
-      ntoks = 0
-      i = 0
-      DO WHILE (i .LT. slen)
-         i = i + 1
-         IF (INDEX(dlmtr,strng(i:i)) .NE. 0) CYCLE
-         DO j=i+1, slen
-            IF (INDEX(dlmtr,strng(j:j)) .NE. 0) EXIT
-         END DO
-         IF (j .LE. slen) THEN
-            ntoks = ntoks + 1
-            toks(ntoks) = strng(i:j-1)
-            i = j-1
-         ELSE
-            EXIT
-         END IF
-      END DO
-
-      RETURN
-      END SUBROUTINE PARSESTR
-!-----------------------------------------------------------------------
-      END MODULE TTPMOD
+      END MODULE PFIBMOD
 !#######################################################################

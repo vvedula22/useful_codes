@@ -14,6 +14,7 @@
       USE TTPMOD
       USE BOMOD
       USE NYGMOD
+      USE PFIBMOD
       USE UTILMOD, ONLY : stdL
       IMPLICIT NONE
 

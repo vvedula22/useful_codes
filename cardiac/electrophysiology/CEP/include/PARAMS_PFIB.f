@@ -1,7 +1,7 @@
 !-----------------------------------------------------------------------
 !
-!     This module defines data structures for the Stewart's
-!     cellular activation model for Purkinje fiber cells.
+!     This module defines parameters for the Stewart's cellular
+!     activation model for Purkinje fiber cells.
 !
 !     Reference for Stewart's electrophysiology model:
 !        Stewart, P., et al., (2009). Mathematical models of the
@@ -24,16 +24,12 @@
 !     Cm: Cell capacitance per unit surface area
 !     Note: Cm = 2.0 uF/cm2 in paper, but C = 0.185 uF in CellML
       REAL(KIND=RKIND) :: Cm = 0.185_RKIND         ! units: uF/cm^{2}
-!     sV: Surface to volume ratio
-      REAL(KIND=RKIND) :: sV = 0.2_RKIND           ! units: um^{-1}
-!     rho: Cellular resistivity
-      REAL(KIND=RKIND) :: rho = 162._RKIND         ! units: \Omega-cm
 !     V_c: Cytoplasmic volume
 !     Note: V_c = 16.404 um3 in the paper
-      REAL(KIND=RKIND) :: V_c = 16.404E-3_RKIND    ! units: um^{3}
+      REAL(KIND=RKIND) :: V_c = 0.016404_RKIND    ! units: um^{3}
 !     V_sr: Sacroplasmic reticulum volume (value chosen from CellML)
 !     Note: V_sr = 1.094 um3 in the paper
-      REAL(KIND=RKIND) :: V_sr = 1.094E-3_RKIND    ! units: um^{3}
+      REAL(KIND=RKIND) :: V_sr = 0.001094_RKIND    ! units: um^{3}
 !     V_ss: Subspace volume (value from CellML)
 !     Note: V_ss = 0.05468 um3 in the paper
       REAL(KIND=RKIND) :: V_ss = 5.468E-5_RKIND    ! units: um^{3}
@@ -43,6 +39,8 @@
       REAL(KIND=RKIND) :: Na_o = 140._RKIND        ! units: mM
 !     Ca_o: Extracellular Ca concentration
       REAL(KIND=RKIND) :: Ca_o = 2._RKIND          ! units: mM
+!     G_Na: Maximal I_Na conductance
+      REAL(KIND=RKIND) :: G_Na = 130.5744_RKIND    ! units: nS/pF
 !     G_K1: Maximal I_K1 conductance
       REAL(KIND=RKIND) :: G_K1 = 0.065_RKIND       ! units: nS/pF
 !     G_to: Maximal I_to conductance
@@ -52,13 +50,11 @@
 !     G_fK: Maximal hyperpolarization current I_f conductance
       REAL(KIND=RKIND) :: G_fK = 0.0234346_RKIND     ! units: nS/pF
 !     G_fNa: Maximal hyperpolarization current I_f conductance
-      REAL(KIND=RKIND) :: G_fNa = 0.145654_RKIND   ! units: nS/pF
+      REAL(KIND=RKIND) :: G_fNa = 0.0145654_RKIND   ! units: nS/pF
 !     G_Kr: Maximal I_Kr conductance
       REAL(KIND=RKIND) :: G_Kr = 0.0918_RKIND      ! units: nS/pF
 !     G_Ks: Maximal epicardial I_Ks conductance, units: nS/pF
       REAL(KIND=RKIND) :: G_Ks = 0.2352_RKIND      ! units: nS/pF
-!     G_Na: Maximal I_Na conductance
-      REAL(KIND=RKIND) :: G_Na = 130.5744_RKIND    ! units: nS/pF
 !     p_KNa: Relative I_Ks permeability to Na
       REAL(KIND=RKIND) :: p_KNa = 0.03_RKIND       ! dimensionless
 !     G_CaL: Maximal I_CaL conductance
@@ -92,7 +88,7 @@
 !     G_bCa: Maximal I_bCa conductance
       REAL(KIND=RKIND) :: G_bCa = 5.92E-4_RKIND    ! units: nS/pF
 !     Vmax_up: Maximal I_up conductance
-      REAL(KIND=RKIND) :: Vmax_up = 6.375E-3_RKIND ! units: mM/ms
+      REAL(KIND=RKIND) :: Vmax_up = 0.006375_RKIND ! units: mM/ms
 !     K_up: Half-saturation constant of I_up
       REAL(KIND=RKIND) :: K_up = 2.5E-4_RKIND      ! units: mM
 !     V_rel: Maximal I_rel conductance
@@ -116,11 +112,11 @@
 !     V_leak: Maximal I_leak conductance
       REAL(KIND=RKIND) :: V_leak = 3.6E-4_RKIND    ! units: mM/ms
 !     V_xfer: Maximal I_xfer conductance
-      REAL(KIND=RKIND) :: V_xfer = 3.8E-3_RKIND    ! units: mM/ms
+      REAL(KIND=RKIND) :: V_xfer = 0.0038_RKIND    ! units: mM/ms
 !     Buf_c: Total cytoplasmic buffer concentration
       REAL(KIND=RKIND) :: Buf_c = 0.2_RKIND        ! units: mM
 !     K_bufc: Ca_i half-saturation constant for cytplasmic buffer
-      REAL(KIND=RKIND) :: K_bufc = 1.E-3_RKIND     ! units: mM
+      REAL(KIND=RKIND) :: K_bufc = 0.001_RKIND     ! units: mM
 !     Buf_sr: Total sacroplasmic buffer concentration
       REAL(KIND=RKIND) :: Buf_sr = 10._RKIND       ! units: mM
 !     K_bufsr: Ca_sr half-saturation constant for subspace buffer
@@ -146,6 +142,7 @@
       REAL(KIND=RKIND) :: E_K
       REAL(KIND=RKIND) :: E_Ca
       REAL(KIND=RKIND) :: E_Ks
+
 !     Cellular transmembrane currents
 !     I_Na: Fast sodium current
       REAL(KIND=RKIND) :: I_Na
@@ -181,8 +178,8 @@
       REAL(KIND=RKIND) :: I_xfer
 !     I_sus: sustained current
       REAL(KIND=RKIND) :: I_sus
-!     I_f: hyperpolarization-activated current
-      REAL(KIND=RKIND) :: I_f
+!     I_f: hyperpolarization-activated currents
+      REAL(KIND=RKIND) :: I_f, I_fNa, I_fK
 !-----------------------------------------------------------------------
 !     State variables
       REAL(KIND=RKIND) :: V
@@ -203,9 +200,10 @@
       REAL(KIND=RKIND) :: d, di
       REAL(KIND=RKIND) :: f, fi
       REAL(KIND=RKIND) :: f2, f2i
-      REAL(KIND=RKIND) :: fcass, fcassi
+      REAL(KIND=RKIND) :: fCass, fCassi
       REAL(KIND=RKIND) :: s, si
       REAL(KIND=RKIND) :: r, ri
+      REAL(KIND=RKIND) :: y, yi
 
 !     Other variables
       REAL(KIND=RKIND) :: k1

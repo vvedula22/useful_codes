@@ -281,6 +281,11 @@ c     Check inputs for any inconsistencies
             err = "Implicit time integration is not allowed for "//
      3         "Nygren model. Use FE or RK4 instead"
          END IF
+
+         IF (cep%cepType .EQ. cepModel_PFIB) THEN
+            err = "Implicit time integration is not allowed for "//
+     3         "Stewart model. Use FE or RK4 instead"
+         END IF
       END IF
 
 c--------------------------------------------------------------------
