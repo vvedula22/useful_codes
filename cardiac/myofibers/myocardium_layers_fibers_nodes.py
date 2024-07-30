@@ -4,6 +4,7 @@ import vtk
 import time
 import numpy as np
 from vtk.util.numpy_support import vtk_to_numpy, numpy_to_vtk
+from datetime import timedelta
 
 EPS = sys.float_info.epsilon
 PI  = np.pi
@@ -18,7 +19,7 @@ DATASTR4 = 'Phi_AB'
 # Epicardium - Myocardium
 EPI_MYO = 0.8
 # Endocardium - Myocardium
-END_MYO = 0.8
+END_MYO = 0.2
 # Medial - Basal
 MID_BAS = 0.99
 #----------------------------------------------------------------------
@@ -30,9 +31,9 @@ ALFA_END = (+40.0)*PI/180.0
 # Fiber angle at epicardium
 ALFA_EPI = (-50.0)*PI/180.0
 # Sheet angle at endocardium
-BETA_END = (-65.0)*PI/180.0
+BETA_END = (-60.0)*PI/180.0
 # Sheet angle at epicardium
-BETA_EPI = (+25.0)*PI/180.0
+BETA_EPI = (+20.0)*PI/180.0
 #----------------------------------------------------------------------
 
 #----------------------------------------------------------------------
@@ -190,14 +191,14 @@ def createVTKDataArray(dType, numComp, numTupls, dName):
 #----------------------------------------------------------------------
 def loadLaplaceSoln(fileName):
 
-    print "   Loading Laplace solution   <---   %s" % (fileName)
+    print("   Loading Laplace solution   <---   %s" % (fileName))
     vtuReader = vtk.vtkXMLUnstructuredGridReader()
     vtuReader.SetFileName(fileName)
     vtuReader.Update()
 
     vtuMesh = vtk.vtkUnstructuredGrid()
 
-    print "   Extracting solution and its gradients at points"
+    print("   Extracting solution and its gradients at points")
 
     gradFilter = vtk.vtkGradientFilter()
     gradFilter.SetInputConnection(vtuReader.GetOutputPort())
@@ -254,14 +255,14 @@ def loadLaplaceSoln(fileName):
 #----------------------------------------------------------------------
 def loadLaplaceSolnCells(fileName):
 
-    print "   Loading Laplace solution at cells   <---   %s" % (fileName)
+    print("   Loading Laplace solution at cells   <---   %s" % (fileName))
     vtuReader = vtk.vtkXMLUnstructuredGridReader()
     vtuReader.SetFileName(fileName)
     vtuReader.Update()
 
     vtuMesh = vtk.vtkUnstructuredGrid()
 
-    print "   Extracting solution at cells"
+    print("   Extracting solution at cells")
 
     pt2Cell = vtk.vtkPointDataToCellData()
     pt2Cell.SetInputConnection(vtuReader.GetOutputPort())
@@ -325,11 +326,11 @@ def loadLaplaceSolnCells(fileName):
 #----------------------------------------------------------------------
 def setDomainID(vtuMesh, vtuPhiEP, vtuPhiLV, vtuPhiRV, vtuPhiAB):
 
-    print "   Setting domain IDs at cells"
+    print("   Setting domain IDs at cells")
     numCell = vtuMesh.GetNumberOfCells()
     dmnIDs  = createVTKDataArray("int", 1, numCell, "DOMAIN_ID")
 
-    for iCell in xrange(0, numCell):
+    for iCell in range(0, numCell):
         phiEP = vtuPhiEP.GetTuple1(iCell)
         phiLV = vtuPhiLV.GetTuple1(iCell)
         phiRV = vtuPhiRV.GetTuple1(iCell)
@@ -338,7 +339,7 @@ def setDomainID(vtuMesh, vtuPhiEP, vtuPhiLV, vtuPhiRV, vtuPhiAB):
         dmnID = 2
         if phiEP >= EPI_MYO:
             dmnID = 3
-        if (phiLV >= END_MYO) | (phiRV >= END_MYO):
+        if (phiLV <= END_MYO):
             dmnID = 1
         if phiAB >= MID_BAS:
             dmnID = 0
@@ -375,7 +376,7 @@ def axis (u, v):
         e1 = u / n1
     else:
         e1 = [1.0, 0.0, 0.0]
-        print " Zero gradient norm detected (e1)"
+        print(" Zero gradient norm detected (e1)")
 
     e2 = v - np.dot(e1, v)*e1
     n2 = np.sqrt(norm(e2))
@@ -383,7 +384,7 @@ def axis (u, v):
         e2 = e2 / n2
     else:
         e2 = [0.0, 1.0, 0.0]
-        print " Zero gradient norm detected (e2)"
+        print(" Zero gradient norm detected (e2)")
 
     e0 = np.cross(e1, e2)
 
@@ -437,7 +438,7 @@ def bislerp(Q_A, Q_B, t):
     qTest[:,7] = -quat_mul(k, qA)
 
     norms=np.zeros(8)
-    for i in xrange(0,8):
+    for i in range(0,8):
         norms[i] = np.linalg.norm(np.dot(qTest[:,i],qB))
 
     index = np.argmax(norms)
@@ -452,7 +453,7 @@ def getFiberDirections(vtuMesh, vtuPhiEP, vtuPhiLV, vtuPhiRV, \
     vtuGPhiEP, vtuGPhiLV, vtuGPhiRV, vtuGPhiAB):
 
     numPoints = vtuMesh.GetNumberOfPoints()
-    print "   Computing fiber directions at points"
+    print("   Computing fiber directions at points")
     F = createVTKDataArray("double", 3, numPoints, "FIB_DIR1")
     S = createVTKDataArray("double", 3, numPoints, "FIB_DIR2")
     T = createVTKDataArray("double", 3, numPoints, "FIB_DIR3")
@@ -461,7 +462,7 @@ def getFiberDirections(vtuMesh, vtuPhiEP, vtuPhiLV, vtuPhiRV, \
     k = 1
     print ("      Progress "),
     sys.stdout.flush()
-    for iPt in xrange(0, numPoints):
+    for iPt in range(0, numPoints):
         phiEP  = vtuPhiEP.GetTuple1(iPt)
         phiLV  = vtuPhiLV.GetTuple1(iPt)
         phiRV  = vtuPhiRV.GetTuple1(iPt)
@@ -501,7 +502,7 @@ def getFiberDirections(vtuMesh, vtuPhiEP, vtuPhiLV, vtuPhiRV, \
             sys.stdout.flush()
             k = k + 1
             j = int(float((k-1)*numPoints)/10.0)
-    print "[Done!]"
+    print("[Done!]")
 
     return F, S, T
 #----------------------------------------------------------------------
@@ -510,9 +511,9 @@ def getFiberDirections(vtuMesh, vtuPhiEP, vtuPhiLV, vtuPhiRV, \
 # Main function
 if __name__ == '__main__':
 
-    t1 = time.time()
-    print "========================================================"
-    fileName = "laplace_soln.vtu"
+    t1 = time.perf_counter()
+    print("========================================================")
+    fileName = "results_laplace/result_040.vtu"
     vtuMesh, phiEP, phiLV, phiRV, phiAB, \
         gPhiEP, gPhiLV, gPhiRV, gPhiAB = loadLaplaceSoln(fileName)
 
@@ -522,7 +523,7 @@ if __name__ == '__main__':
     cphiEP, cphiLV, cphiRV, cphiAB = loadLaplaceSolnCells(fileName)
     dmnIDs = setDomainID(vtuMesh, cphiEP, cphiLV, cphiRV, cphiAB)
 
-    print "   Writing fibers and domains to VTK data structure"
+    print("   Writing fibers and domains to VTK data structure")
     vtuMesh.GetPointData().AddArray(F)
     vtuMesh.GetPointData().AddArray(S)
     vtuMesh.GetPointData().AddArray(T)
@@ -533,11 +534,11 @@ if __name__ == '__main__':
     vtuWriter = vtk.vtkXMLUnstructuredGridWriter()
     vtuWriter.SetInputData(vtuMesh)
     vtuWriter.SetFileName(fileName)
-    print "   Writing to vtu file   --->   %s" % (fileName)
+    print ("   Writing to vtu file   --->   %s" % (fileName))
     vtuWriter.Write()
-    t2 = time.time()
-    print('\n   Total time: %.3fs') % (t2-t1)
-    print "========================================================"
+    dur = timedelta(seconds=time.perf_counter()-t1)
+    print("\n   Total time: ", dur)
+    print("========================================================")
 
 #----------------------------------------------------------------------
 
