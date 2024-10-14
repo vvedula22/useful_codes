@@ -1,0 +1,19 @@
+
+Electrophysiology model: tong {
+    CEP model parameters file path: spike_params_tong.in
+}
+
+Myocardium zone: epi
+
+Time integration scheme: fe
+
+Number of time steps: 50000
+
+Time step size: 0.2       # ms
+
+Stimulus: I {
+    Amplitude: -0.5
+    Start time: 1000.0     # ms
+    Duration: 2000.0        # ms
+}
+

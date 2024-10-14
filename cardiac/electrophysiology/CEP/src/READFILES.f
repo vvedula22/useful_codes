@@ -90,6 +90,11 @@ c     Load inputs from list
          nX = 7
          nG = 13
 
+      CASE ("tong")
+         cep%cepType = cepModel_TONG
+         nX = 3
+         nG = 20
+
       CASE DEFAULT
          err = " Unknown electrophysiology model"
       END SELECT

@@ -72,6 +72,7 @@ MYFUN  = COM_TYPE.f    \
          CEPMOD_NYG.f  \
          CEPMOD_PFIB.f \
          CEPMOD_TTP.f  \
+         CEPMOD_TONG.f \
          ECMOD_DCPLD.f \
          CEPMOD.f      \
          COM_MOD.f     \

@@ -1,0 +1,252 @@
+#--------------------------------------------------------------------
+#
+#     Parameters used for Tong Uterine Myocyte Model.
+#
+#--------------------------------------------------------------------
+
+#     Default model parameters
+# T: Temperature # [K] - CellML
+T : 308  
+
+# F: Faraday constant # [C/mol] - CellML
+F : 96485  
+
+# R: Gas constant # [J/K/kmol] - CellML
+R : 8314  
+
+# Na+ valency # [dimensionless] - CellML
+z_Na : 1  
+
+# K+ valency # [dimensionless] - CellML
+z_K : 1  
+
+# Ca2+ valency # [dimensionless] - CellML
+z_Ca : 2  
+
+# Intracellular Na+ concentration # [mM] - CellML
+Na_i : 4  
+
+# Extracellular Na+ concentration # [mM] - CellML
+Na_o : 130  
+
+# Intracellular K+ concentration # [mM] - CellML
+K_i : 140  
+
+# Extracellular K+ concentration # [mM] - CellML
+K_o : 6  
+
+# Intracellular Cl- concentration # [mM] - CellML
+Cl_i : 46 
+
+# Extracellular Cl- concentration # [mM] - CellML
+Cl_o : 130 
+
+# Extracellular Ca+ concentration # [mM] - CellML
+Ca_o : 2.5 
+
+# Extracellular Mg2+ concentration # [mM] - CellML
+Mg_o : 0.5
+
+# Specific membrane capacitance # [uF/cm^2] - CellML
+C_m : 1
+
+# Cell surface area to volume ratio # [1/m] - CellML
+AV_c : 4
+
+# Proportion of free Ca2+ ions # [dimensionless] - CellML
+# defined as buff in CellML & src code 
+bet : 0.015
+
+
+# -------------------- Plasma membrane Ca-ATPase --------------------
+# PMCA Ca2+ flux # [mM/ms] - CellML
+J_PMCA : 3.5e-7
+
+# Half-saturation concentration for PMCA # [mM] - CellML
+# Defined in uM, converted to mM
+K_mPMCA : 0.0005
+
+# Hill coefficient for PMCA # [dimensionless] - CellML
+n_PMCA : 2
+
+
+# -------------------- NaCa Exchanger --------------------
+# NaCa exchanger flux # [mM/ms] - CellML
+J_NaCa : 3.5e-6
+
+# Half-saturation concentration for NaCa exchanger allosteric factor # [mM] - CellML
+# Wrong in Table S4 corrected with src code and CellML model
+K_mAllo : 0.0003
+
+# Hill coefficient for NaCa exchanger allosteric factor # [dimensionless] - CellML
+n_Allo : 4
+
+# Saturation factor for NaCa exchanger # [dimensionless] - CellML
+k_sat : 0.27
+
+# Partition parameter for NaCa exchanger flux # [dimensionless] - CellML
+# xgamma in CellML
+gam : 0.35 
+
+# Na_i dissociation constant for NaCa exchanger # [mM] - CellML
+K_mNai : 30.0
+
+# Ca_i dissociation constant for NaCa exchanger # [mM] - CellML
+# Defined in uM, converted to mM checked with CellML & src code
+K_mCai : 7e-3
+
+# Na_o dissociation constant for NaCa exchanger # [mM] - CellML
+K_mNao: 87.5
+
+# Ca_o dissociation constant for NaCa exchanger # [mM] - CellML
+K_mCao : 1.3
+
+
+# -------------------- L-type Calcium (ICaL) --------------------
+# Maximum conductance of ICaL # [mS/uF] - CellML
+g_CaL : 0.6
+
+# Reversal potential of ICaL # [mV] - CellML
+E_CaL : 45
+
+# Half-saturation concentration for ICaL # [mM] - CellML
+# Defined in uM, converted to mM
+# kmca in CellML
+K_mCaL : 1e-3
+
+# Inactivation Steady State Slope Factor # [mV] - CellML / src code
+f_ss_sf : 7
+
+
+# -------------------- T-type Calcium (ICaT) --------------------
+# Maximum conductance of ICaT # [mS/uF] - CellML
+g_CaT : 0.058
+
+# Reversal potential of ICaT # [mV] - CellML
+E_CaT : 42
+
+
+# -------------------- Sodium Current (INa) --------------------
+# maximum conductance of INa# [mS/uF] - CellML
+# can range 0 to 0.12 (double check)
+g_Na : 0.0
+
+
+# -------------------- Hyperpolarization-activated Current (Ih) --------------------
+# maximum conductance of Ih # [mS/uF] - CellML
+g_h : 0.0542
+
+# Permeability of I_h to Na:K # [dimensionless]
+# defined as P_Na:0.35 and P_K:1 separately in CellML ratio is the same
+
+P_NaK : 0.35
+
+
+# -------------------- Potassium Currents (IK1, IK2, IKa, IKb, IK(Ca)) --------------------
+# Maximum conductance of total IK # [mS/uF]
+# Not used in CellML instead the g_K1, etc. expressions are solved
+g_K : 0.8
+
+# Maximum conductance of background potassium current # [mS/uF] - CellML
+g_b : 0.004 
+
+# Maximum conductance of IK1 # 0.65*g_K [mS/uF] - CellML
+g_K1 : 0.52
+
+# Maximum conductance of IK2 # 0.04[mS/uF] - CellML
+g_K2 : 0.032
+
+# Maximum conductance of IKa # 0.2[mS/uF] - CellML
+g_Ka : 0.16
+
+# ??? # g_K Never used, but defined in Table S4
+g_BK : 0.8 
+
+# Maximum conductance of calcium-activated potassium currents (BK, BKaB) # [mS/uF] - CellML
+g_KCa : 0.8
+
+# proportion of I_a in IK(Ca) # [dimensionless] - CellML
+# Value from paper source code not defined in Table S4
+# gbka in CellML
+p_a : 0.2
+
+# proportion of I_ab1 in IK(Ca)  # [dimensionless] - CellML
+# Value from paper source code not defined in Table S4
+# gbkab in CellML
+p_b : 0.1
+
+
+# -------------------- Nonselective Cation Current (I_NSCC) --------------------
+# Maximum conductance of I_NSCC leak current # [mS/uF] # 0.009685 mS/pF by Testrow et al. 
+# Used here but not defined in CellML
+g_L : 0
+
+# Maximum conductance of I_NSCC # [mS/uF]
+g_NS : 0.0123
+
+# Permeability of I_NSCC to Ca:Cs # [dimensionless]
+# defined as PnsCa:0.89 and PnsCs:1 separately in CellML ratio is the same
+
+P_CaCs : 0.89
+
+# Permeability of I_NSCC to Na:Cs # [dimensionless]
+# defined as PnsNa : 0.9 and PnsCs:1 separately in CellML ratio is the same
+
+P_NaCs : 0.9
+
+# Permeability of I_NSCC to K:Cs # [dimensionless]
+# defined as PnsK : 1.3 and PnsCs:1 separately in CellML ratio is the same
+
+P_KCs : 1.3
+
+# Half-saturation concentration for Mg_o inhibition of I_NSCC # [mM] # Table S4: 0.28
+# Not explicitly defined in CellML, but used in I_NSCC equation as 0.281007
+K_dMg : 0.281007
+
+
+# -------------------- Calcium-Activate Chloride Current (I_Cl(Ca)) --------------------
+# Maximium conductance of I_Cl(Ca) # [mS/uF] - CellML
+g_Cl : 0.1875
+
+
+# -------------------- Na-K Exchanger Current (I_NaK) --------------------
+# Maximum conductance of I_NaK # [A/F]
+# ginak in CellML
+g_NaK : 1.7
+
+# Half-saturation concentration for K_o dependency of I_NaK # [mM]
+# nakKmko in CellML
+K_mK : 2.0
+
+# Hill coefficient for K_o dependency of I_NaK
+# not explicitly defined in CellML but used in knak equation as 1.5
+n_K : 1.5
+
+# Half-saturation concentration for Na_i dependency of I_NaK # [mM]
+# nakKmnai in CellML
+K_mNa : 22.0
+
+# Hill coefficient for Na_i dependency of I_NaK
+# not explicitly defined in CellML but used in nnak equation as 2
+n_Na : 2
+
+
+# -------------------- Calcium-Dependent Force --------------------
+# Half-saturation Ca concentration for force # [mM]
+K_mF : 161.301 * 1E-6
+# Hill coefficient for Ca_i dependency of force # [dimensionless]
+n_F : 3.60205
+
+# Maximal force # [uN]
+F_max : 3.0
+
+#-----------------------------------------------------------------------
+#     Scaling factors
+#     Voltage scaling
+      Vscale  : 1.0
+
+#     Time scaling
+      Tscale  : 1.0
+
+#     Voltage offset parameter
+      Voffset : 0.0
