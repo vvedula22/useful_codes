@@ -1,6 +1,6 @@
 close all; clear all; clc;
 
-fname = "C:\Users\parke\Documents\Columbia\useful_codes-master\useful_codes-master\cardiac\electrophysiology\CEP\example\tong\Figure11A\log_TONG.txt";
+fname = "Figure11A\log_TONG.txt";
 data = load(fname);
 n  = size(data,2);
 t  = data(:, 1);
