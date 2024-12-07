@@ -193,8 +193,8 @@
          no = no + 21
          ALLOCATE(RPAR(23))
       ELSE IF (cep%cepType .EQ. cepModel_TONG) THEN
-         no = no + 19
-         ALLOCATE(RPAR(21))
+         no = no + 17
+         ALLOCATE(RPAR(19))
       ELSE
          ALLOCATE(RPAR(2))
       END IF
@@ -1275,8 +1275,8 @@
             END DO
 
          END SELECT
-         
-       CASE (cepModel_TONG)
+
+      CASE (cepModel_TONG)
 !        Time integrator
          SELECT CASE (cep%odes%tIntType)
          CASE (tIntType_FE)
@@ -1288,13 +1288,13 @@
 !              Get stimulus current
                CALL GET_STIM_AMP(cTS, cep, Istim, flag)
                IF (flag) RETURN
-               
+
 !              Integrate local state variables
-               CALL TONG_INTEGFE(nX, nG, X, Xg, dt, Istim, RPAR)
+               CALL TONG_INTEGFE(nX, nG, X, Xg, dt, Istim, Ksac, RPAR)
 
 !              Output quantities
-               Xo(1:nX) = X(1:nX) ! State variables
-               Xo(nX+1:nX+19) = RPAR(3:21) ! Current values
+               Xo(1:nX) = X(1:nX)
+               Xo(nX+1:nX+17) = RPAR(3:19)
 
 !              Perform NaN check
                IF (ISNAN(X(1))) THEN
@@ -1315,9 +1315,46 @@
                   j = NINT(REAL((k-1)*nTS,KIND=8)/5.0D0)
                END IF
             END DO
-         END SELECT
 
-      END SELECT
+         CASE (tIntType_RK4)
+!           Time loop
+            j   = 1
+            k   = 1
+            cTS = 0._RKIND
+            DO i=1, nTS
+!              Get stimulus current
+               CALL GET_STIM_AMP(cTS, cep, Istim, flag)
+               IF (flag) RETURN
+
+!              Integrate local state variables
+               CALL TONG_INTEGRK(nX, nG, X, Xg, dt, Istim, Ksac, RPAR)
+
+!              Output quantities
+               Xo(1:nX) = X(1:nX)
+               Xo(nX+1:nX+17) = RPAR(3:19)
+
+!              Perform NaN check
+               IF (ISNAN(X(1))) THEN
+                  err = " NaN occurence (X). Aborted!"
+               END IF
+
+!              Time step advance
+               cTS = cTS + dt
+
+!              Write state variables to a log file
+               IF (MOD(i,iwrite) .EQ. 0)
+     2            CALL WTXT(oFile, no, Xo, cTS)
+
+!           Display progress
+               IF (i.EQ.j .AND. iProg) THEN
+                  WRITE(*,'(A)',ADVANCE='NO') (k-1)*20//"%  "
+                  k = k + 1
+                  j = NINT(REAL((k-1)*nTS,KIND=8)/5.0D0)
+               END IF
+            END DO
+
+         END SELECT ! cep%odes%tIntType
+      END SELECT ! cep%cepType
 
       WRITE(*,'(A)')
       IF (cep%odeS%tIntType .EQ. tIntType_CN2) THEN

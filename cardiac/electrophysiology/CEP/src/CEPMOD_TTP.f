@@ -341,7 +341,7 @@
 !     Stretch-activated currents
       I_sac = K_sac * (Vrest - V)
 
-!      Diff = 1._RKIND / (1.0D1 * rho * Cm * sV)
+!     Diff = 1._RKIND / (1.0D1 * rho * Cm * sV)
       RT   = Rc * Tc / Fc
       E_K  = RT * LOG(K_o/K_i)
       E_Na = RT * LOG(Na_o/Na_i)
