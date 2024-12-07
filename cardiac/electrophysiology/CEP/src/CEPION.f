@@ -143,6 +143,20 @@
             CALL PFIB_READPARFF(fparam_in)
          END IF
 
+      CASE (cepModel_TONG)
+         WRITE(oFile, '(A)') "log_TONG.txt"
+         CALL CTXT(oFile)
+
+!        Initialize state variables
+         std = " Initializing Tong uterine myocyte model"
+         CALL TONG_INIT(nX, nG, X, Xg)
+
+!        Overwrite parameters with user-provided input file
+         IF (init_param_file) THEN
+            std = " Reading parameters from input file"
+            CALL TONG_READPARFF(fparam_in)
+         END IF
+
       END SELECT
 
       RETURN
@@ -178,6 +192,9 @@
       ELSE IF (cep%cepType .EQ. cepModel_PFIB) THEN
          no = no + 21
          ALLOCATE(RPAR(23))
+      ELSE IF (cep%cepType .EQ. cepModel_TONG) THEN
+         no = no + 17
+         ALLOCATE(RPAR(19))
       ELSE
          ALLOCATE(RPAR(2))
       END IF
@@ -1259,7 +1276,85 @@
 
          END SELECT
 
-      END SELECT
+      CASE (cepModel_TONG)
+!        Time integrator
+         SELECT CASE (cep%odes%tIntType)
+         CASE (tIntType_FE)
+!           Time loop
+            j   = 1
+            k   = 1
+            cTS = 0._RKIND
+            DO i=1, nTS
+!              Get stimulus current
+               CALL GET_STIM_AMP(cTS, cep, Istim, flag)
+               IF (flag) RETURN
+
+!              Integrate local state variables
+               CALL TONG_INTEGFE(nX, nG, X, Xg, dt, Istim, Ksac, RPAR)
+
+!              Output quantities
+               Xo(1:nX) = X(1:nX)
+               Xo(nX+1:nX+17) = RPAR(3:19)
+
+!              Perform NaN check
+               IF (ISNAN(X(1))) THEN
+                  err = " NaN occurence (X). Aborted!"
+               END IF
+
+!              Time step advance
+               cTS = cTS + dt
+
+!              Write state variables to a log file
+               IF (MOD(i,iwrite) .EQ. 0)
+     2            CALL WTXT(oFile, no, Xo, cTS)
+
+!           Display progress
+               IF (i.EQ.j .AND. iProg) THEN
+                  WRITE(*,'(A)',ADVANCE='NO') (k-1)*20//"%  "
+                  k = k + 1
+                  j = NINT(REAL((k-1)*nTS,KIND=8)/5.0D0)
+               END IF
+            END DO
+
+         CASE (tIntType_RK4)
+!           Time loop
+            j   = 1
+            k   = 1
+            cTS = 0._RKIND
+            DO i=1, nTS
+!              Get stimulus current
+               CALL GET_STIM_AMP(cTS, cep, Istim, flag)
+               IF (flag) RETURN
+
+!              Integrate local state variables
+               CALL TONG_INTEGRK(nX, nG, X, Xg, dt, Istim, Ksac, RPAR)
+
+!              Output quantities
+               Xo(1:nX) = X(1:nX)
+               Xo(nX+1:nX+17) = RPAR(3:19)
+
+!              Perform NaN check
+               IF (ISNAN(X(1))) THEN
+                  err = " NaN occurence (X). Aborted!"
+               END IF
+
+!              Time step advance
+               cTS = cTS + dt
+
+!              Write state variables to a log file
+               IF (MOD(i,iwrite) .EQ. 0)
+     2            CALL WTXT(oFile, no, Xo, cTS)
+
+!           Display progress
+               IF (i.EQ.j .AND. iProg) THEN
+                  WRITE(*,'(A)',ADVANCE='NO') (k-1)*20//"%  "
+                  k = k + 1
+                  j = NINT(REAL((k-1)*nTS,KIND=8)/5.0D0)
+               END IF
+            END DO
+
+         END SELECT ! cep%odes%tIntType
+      END SELECT ! cep%cepType
 
       WRITE(*,'(A)')
       IF (cep%odeS%tIntType .EQ. tIntType_CN2) THEN

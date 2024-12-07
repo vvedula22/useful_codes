@@ -90,6 +90,11 @@ c     Load inputs from list
          nX = 7
          nG = 13
 
+      CASE ("tong")
+         cep%cepType = cepModel_TONG
+         nX = 2
+         nG = 20
+
       CASE DEFAULT
          err = " Unknown electrophysiology model"
       END SELECT
@@ -249,6 +254,11 @@ c     Check inputs for any inconsistencies
      2      " Stewart's model"
       END IF
 
+      IF (flag .AND. cep%cepType.EQ.cepModel_TONG) THEN
+         err = " Excitation-contraction coupling is not allowed for "//
+     2      " Tong's uterine smooth muscle cell excitation model"
+      END IF
+
       IF (cep%cepType.EQ.cepModel_AP .AND. cep%ec%astrain) THEN
          err = " Active-strain coupling is allowed for TTP and BO"//
      2      " activation models only"
@@ -285,6 +295,11 @@ c     Check inputs for any inconsistencies
          IF (cep%cepType .EQ. cepModel_PFIB) THEN
             err = "Implicit time integration is not allowed for "//
      3         "Stewart model. Use FE or RK4 instead"
+         END IF
+
+         IF (cep%cepType .EQ. cepModel_TONG) THEN
+            err = "Implicit time integration is not allowed for "//
+     3         "Tong model. Use FE or RK4 instead"
          END IF
       END IF
 
