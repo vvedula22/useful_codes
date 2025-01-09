@@ -6,9 +6,9 @@ Electrophysiology model: tong {
 
 Time integration scheme: rk
 
-Number of time steps: 150000
+Number of time steps: 30000
 
-Time step size: 0.2        # ms
+Time step size: 1.0        # ms
 
 Stimulus: I {
     Amplitude: -0.2
