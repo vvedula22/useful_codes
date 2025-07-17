@@ -12,16 +12,6 @@ DATASTR1 = 'Phi_EPI'
 DATASTR2 = 'Phi_AB'
 
 #----------------------------------------------------------------------
-# Define thersholds for domains
-# Epicardium - Myocardium
-EPI_MYO = 0.8
-# Endocardium - Myocardium
-END_MYO = 0.2
-# Medial - Basal
-MID_BAS = 0.99
-#----------------------------------------------------------------------
-
-#----------------------------------------------------------------------
 # Define fiber and sheet angles
 # Fiber angle at endocardium
 ALFA_END = (+40.0)*PI/180.0
@@ -128,29 +118,6 @@ def loadLaplaceSoln(fileName):
     vtuMesh.GetCellData().RemoveArray(DATASTR2+'_grad')
 
     return vtuMesh, cPhiEP, cPhiAB, cGPhiEP, cGPhiAB
-#----------------------------------------------------------------------
-
-#----------------------------------------------------------------------
-def setDomainID(vtuMesh, vtuPhiEP, vtuPhiAB):
-
-    print ("   Setting domain IDs at cells")
-    numCell = vtuMesh.GetNumberOfCells()
-    dmnIDs  = createVTKDataArray("int", 1, numCell, "DOMAIN_ID")
-
-    for iCell in xrange(0, numCell):
-        phiEP = vtuPhiEP.GetTuple1(iCell)
-        phiAB = vtuPhiAB.GetTuple1(iCell)
-
-        dmnID = 2
-        if phiEP >= EPI_MYO:
-            dmnID = 3
-        if (phiEP <= END_MYO):
-            dmnID = 1
-        if phiAB >= MID_BAS:
-            dmnID = 0
-        dmnIDs.SetTuple1(iCell, dmnID)
-
-    return dmnIDs
 #----------------------------------------------------------------------
 
 #----------------------------------------------------------------------
@@ -265,8 +232,6 @@ if __name__ == '__main__':
     #    S: sheet-normal direction
     F, T, S = getFiberDirections(vtuMesh, phiEP, gPhiEP, gPhiAB)
 
-    dmnIDs = setDomainID(vtuMesh, phiEP, phiAB)
-
     print ("   Writing fibers and domains to VTK data structure")
     vtuMesh.GetCellData().AddArray(F)
     vtuMesh.GetCellData().AddArray(T)
@@ -274,7 +239,7 @@ if __name__ == '__main__':
 
     vtuMesh.GetCellData().AddArray(dmnIDs)
 
-    fileName = "fibers_domains.vtu"
+    fileName = "fibers.vtu"
     vtuWriter = vtk.vtkXMLUnstructuredGridWriter()
     vtuWriter.SetInputData(vtuMesh)
     vtuWriter.SetFileName(fileName)

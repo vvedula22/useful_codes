@@ -391,8 +391,8 @@ def getFiberDirections(vtuMesh, vtuPhiEP, vtuPhiLV, vtuPhiRV, \
     numCell = vtuMesh.GetNumberOfCells()
     print "   Computing fiber directions at cells"
     F = createVTKDataArray("double", 3, numCell, "FIB_DIR1")
-    S = createVTKDataArray("double", 3, numCell, "FIB_DIR2")
-    T = createVTKDataArray("double", 3, numCell, "FIB_DIR3")
+    T = createVTKDataArray("double", 3, numCell, "FIB_DIR2")
+    S = createVTKDataArray("double", 3, numCell, "FIB_DIR3")
 
     j = 1
     k = 1
@@ -440,7 +440,7 @@ def getFiberDirections(vtuMesh, vtuPhiEP, vtuPhiLV, vtuPhiRV, \
             j = int(float((k-1)*numCell)/10.0)
     print "[Done!]"
 
-    return F, S, T
+    return F, T, S
 #----------------------------------------------------------------------
 
 #----------------------------------------------------------------------
@@ -453,15 +453,19 @@ if __name__ == '__main__':
     vtuMesh, phiEP, phiLV, phiRV, phiAB, \
         gPhiEP, gPhiLV, gPhiRV, gPhiAB = loadLaplaceSoln(fileName)
 
-    F, S, T = getFiberDirections(vtuMesh, phiEP, phiLV, phiRV, \
+    # Fiber directions use convention from Bayer et al.
+    #    F: longitudinal fiber direction
+    #    T: transverse or sheet orientation
+    #    S: sheet-normal direction
+    F, T, S = getFiberDirections(vtuMesh, phiEP, phiLV, phiRV, \
         gPhiEP, gPhiLV, gPhiRV, gPhiAB)
 
     dmnIDs = setDomainID(vtuMesh, phiEP, phiLV, phiRV, phiAB)
 
     print "   Writing fibers and domains to VTK data structure"
     vtuMesh.GetCellData().AddArray(F)
-    vtuMesh.GetCellData().AddArray(S)
     vtuMesh.GetCellData().AddArray(T)
+    # vtuMesh.GetCellData().AddArray(S)
 
     vtuMesh.GetCellData().AddArray(dmnIDs)
 

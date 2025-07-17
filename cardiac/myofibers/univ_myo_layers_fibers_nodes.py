@@ -13,25 +13,15 @@ DATASTR1 = 'Phi_EPI'
 DATASTR2 = 'Phi_AB'
 
 #----------------------------------------------------------------------
-# Define thersholds for domains
-# Epicardium - Myocardium
-EPI_MYO = 0.8
-# Endocardium - Myocardium
-END_MYO = 0.2
-# Medial - Basal
-MID_BAS = 0.99
-#----------------------------------------------------------------------
-
-#----------------------------------------------------------------------
 # Define fiber and sheet angles
 # Fiber angle at endocardium
 ALFA_END = (+40.0)*PI/180.0
 # Fiber angle at epicardium
 ALFA_EPI = (-50.0)*PI/180.0
 # Sheet angle at endocardium
-BETA_END = (-60.0)*PI/180.0
+BETA_END = (-65.0)*PI/180.0
 # Sheet angle at epicardium
-BETA_EPI = (+20.0)*PI/180.0
+BETA_EPI = (+25.0)*PI/180.0
 #----------------------------------------------------------------------
 
 #----------------------------------------------------------------------
@@ -109,7 +99,7 @@ def loadLaplaceSoln(fileName):
 
     gradFilter.SetInputScalars(vtk.vtkDataObject.FIELD_ASSOCIATION_POINTS,\
         DATASTR2)
-    gradFilter.SetResultArrayName(DATASTR4 + '_pgrad')
+    gradFilter.SetResultArrayName(DATASTR2 + '_pgrad')
     gradFilter.Update()
     vtuMesh = gradFilter.GetOutput()
     nPhiAB  = vtuMesh.GetPointData().GetArray(DATASTR2)
@@ -260,8 +250,8 @@ def getFiberDirections(vtuMesh, vtuPhiEP, vtuGPhiEP, vtuGPhiAB):
     numPoints = vtuMesh.GetNumberOfPoints()
     print ("   Computing fiber directions at points")
     F = createVTKDataArray("double", 3, numPoints, "FIB_DIR1")
-    S = createVTKDataArray("double", 3, numPoints, "FIB_DIR2")
-    T = createVTKDataArray("double", 3, numPoints, "FIB_DIR3")
+    T = createVTKDataArray("double", 3, numPoints, "FIB_DIR2")
+    S = createVTKDataArray("double", 3, numPoints, "FIB_DIR3")
 
     j = 1
     k = 1
@@ -289,7 +279,7 @@ def getFiberDirections(vtuMesh, vtuPhiEP, vtuGPhiEP, vtuGPhiAB):
             j = int(float((k-1)*numPoints)/10.0)
     print ("[Done!]")
 
-    return F, S, T
+    return F, T, S
 #----------------------------------------------------------------------
 
 #----------------------------------------------------------------------
@@ -301,15 +291,19 @@ if __name__ == '__main__':
     fileName = "results_laplace/result_040.vtu"
     vtuMesh, phiEP, phiAB, gPhiEP, gPhiAB = loadLaplaceSoln(fileName)
 
-    F, S, T = getFiberDirections(vtuMesh, phiEP, gPhiEP, gPhiAB)
+    # Fiber directions use convention from Bayer et al.
+    #    F: longitudinal fiber direction
+    #    T: transverse or sheet orientation
+    #    S: sheet-normal direction
+    F, T, S = getFiberDirections(vtuMesh, phiEP, gPhiEP, gPhiAB)
 
     cphiEP, cphiAB = loadLaplaceSolnCells(fileName)
     dmnIDs = setDomainID(vtuMesh, cphiEP, cphiAB)
 
     print ("   Writing fibers and domains to VTK data structure")
     vtuMesh.GetPointData().AddArray(F)
-    vtuMesh.GetPointData().AddArray(S)
     vtuMesh.GetPointData().AddArray(T)
+    # vtuMesh.GetPointData().AddArray(S)
 
     vtuMesh.GetCellData().AddArray(dmnIDs)
 

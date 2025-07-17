@@ -31,9 +31,9 @@ ALFA_END = (+40.0)*PI/180.0
 # Fiber angle at epicardium
 ALFA_EPI = (-50.0)*PI/180.0
 # Sheet angle at endocardium
-BETA_END = (-60.0)*PI/180.0
+BETA_END = (-65.0)*PI/180.0
 # Sheet angle at epicardium
-BETA_EPI = (+20.0)*PI/180.0
+BETA_EPI = (+25.0)*PI/180.0
 #----------------------------------------------------------------------
 
 #----------------------------------------------------------------------
@@ -455,8 +455,8 @@ def getFiberDirections(vtuMesh, vtuPhiEP, vtuPhiLV, vtuPhiRV, \
     numPoints = vtuMesh.GetNumberOfPoints()
     print("   Computing fiber directions at points")
     F = createVTKDataArray("double", 3, numPoints, "FIB_DIR1")
-    S = createVTKDataArray("double", 3, numPoints, "FIB_DIR2")
-    T = createVTKDataArray("double", 3, numPoints, "FIB_DIR3")
+    T = createVTKDataArray("double", 3, numPoints, "FIB_DIR2")
+    S = createVTKDataArray("double", 3, numPoints, "FIB_DIR3")
 
     j = 1
     k = 1
@@ -504,7 +504,7 @@ def getFiberDirections(vtuMesh, vtuPhiEP, vtuPhiLV, vtuPhiRV, \
             j = int(float((k-1)*numPoints)/10.0)
     print("[Done!]")
 
-    return F, S, T
+    return F, T, S
 #----------------------------------------------------------------------
 
 #----------------------------------------------------------------------
@@ -517,7 +517,11 @@ if __name__ == '__main__':
     vtuMesh, phiEP, phiLV, phiRV, phiAB, \
         gPhiEP, gPhiLV, gPhiRV, gPhiAB = loadLaplaceSoln(fileName)
 
-    F, S, T = getFiberDirections(vtuMesh, phiEP, phiLV, phiRV, \
+    # Fiber directions use convention from Bayer et al.
+    #    F: longitudinal fiber direction
+    #    T: transverse or sheet orientation
+    #    S: sheet-normal direction
+    F, T, S = getFiberDirections(vtuMesh, phiEP, phiLV, phiRV, \
         gPhiEP, gPhiLV, gPhiRV, gPhiAB)
 
     cphiEP, cphiLV, cphiRV, cphiAB = loadLaplaceSolnCells(fileName)
@@ -525,8 +529,8 @@ if __name__ == '__main__':
 
     print("   Writing fibers and domains to VTK data structure")
     vtuMesh.GetPointData().AddArray(F)
-    vtuMesh.GetPointData().AddArray(S)
     vtuMesh.GetPointData().AddArray(T)
+    # vtuMesh.GetPointData().AddArray(S)
 
     vtuMesh.GetCellData().AddArray(dmnIDs)
 
