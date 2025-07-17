@@ -53,7 +53,8 @@
       CALL GETRVAL(fid, "max_alpha", max_alpha)
       CALL GETRVAL(fid, "t_sys", t_sys)
       CALL GETRVAL(fid, "t_dia", t_dia)
-      CALL GETRVAL(fid, "gamma", gamma)
+      CALL GETRVAL(fid, "gamma_s", gamma_s)
+      CALL GETRVAL(fid, "gamma_e", gamma_e)
 
 !     Excitaton-contraction coupling: active strain
       CALL GETRVAL(fid, "gf_min", gf_min)
@@ -124,8 +125,8 @@
 
       t1 = MOD(t, t_CL)
 
-      sp = 0.5_RKIND*(1._RKIND + TANH((t1-t_sys)/gamma))
-      sm = 0.5_RKIND*(1._RKIND - TANH((t1-t_dia)/gamma))
+      sp = 0.5_RKIND*(1._RKIND + TANH((t1-t_sys)/gamma_s))
+      sm = 0.5_RKIND*(1._RKIND - TANH((t1-t_dia)/gamma_e))
       ft = sp * sm
 
       a  = max_alpha*ft + min_alpha*(1._RKIND - ft)
@@ -145,8 +146,8 @@
 
       t1 = MOD(t, t_CL)
 
-      sp = 0.5_RKIND*(1._RKIND + TANH((t1-t_sys)/gamma))
-      sm = 0.5_RKIND*(1._RKIND - TANH((t1-t_dia)/gamma))
+      sp = 0.5_RKIND*(1._RKIND + TANH((t1-t_sys)/gamma_s))
+      sm = 0.5_RKIND*(1._RKIND - TANH((t1-t_dia)/gamma_e))
       ft = sp * sm
 
       a  = max_alpha*ft + min_alpha*(1._RKIND - ft)

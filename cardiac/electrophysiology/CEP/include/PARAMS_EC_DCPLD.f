@@ -39,8 +39,11 @@
 !     Onset of diastole (ms)
       REAL(KIND=RKIND) :: t_dia = 484._RKIND
 
-!     Gamma (ms)
-      REAL(KIND=RKIND) :: gamma = 5._RKIND
+!     Steepness of contraction (ms)
+      REAL(KIND=RKIND) :: gamma_s = 5._RKIND
+
+!     Steepness of relaxation (ms)
+      REAL(KIND=RKIND) :: gamma_e = 5._RKIND
 !--------------------------------------------------------------------
 !     Electromechanics coupling parameters: active strain model
 !     Min fiber shortening

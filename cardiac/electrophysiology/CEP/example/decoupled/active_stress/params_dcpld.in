@@ -24,6 +24,9 @@
 #     Onset of diastole (ms)
       t_dia : 484.0
 
-#     Gamma (ms)
-      gamma : 5.0
+#     Steepness of contraction (ms)
+      gamma_s : 5.0
+
+#     Steepness of relaxation (ms)
+      gamma_e : 5.0
 ########################################################################
