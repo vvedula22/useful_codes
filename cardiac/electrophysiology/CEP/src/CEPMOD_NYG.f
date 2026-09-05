@@ -10,6 +10,17 @@
 !        cell: the role of K+ currents in repolarization. Circulation
 !        Research, 82(1). https://pubmed.ncbi.nlm.nih.gov/9440706/
 !
+!     UNITS: SECOND clock, currents in absolute pA, Cm = 0.05 nF, so
+!     dV/dt = -(SUM I)/Cm is in pA/nF = mV/s.  This is the only model
+!     in this solver that does not run in milliseconds: its example
+!     deck uses dt = 1E-4 s and a stimulus of -280 pA lasting 0.006 s.
+!     The stimulus amplitude is an absolute current, not the pA/pF
+!     density a TTP, PFIB or TONG deck uses.
+!
+!     CAUTION: stimulus blocks, time steps and parameter values are
+!     not portable to or from the millisecond models.  The cross-model
+!     table is kept in example/README_CEP_UNITS.md
+!
 !-----------------------------------------------------------------------
 
       MODULE NYGMOD

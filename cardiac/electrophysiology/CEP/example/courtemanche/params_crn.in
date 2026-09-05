@@ -1,0 +1,106 @@
+#--------------------------------------------------------------------
+#
+#     Constants for the Courtemanche-Ramirez-Nattel (CRN) human
+#     atrial myocyte model (Am J Physiol 275:H301-H321, 1998),
+#     Table 1.
+#
+#     Units: ms, mV, pA, pF, nS/pF, pA/pF, mM, um^3, mM/ms.
+#     These are the paper's own units and are not rescaled; see
+#     include/PARAMS_CRN.f and ../README_CEP_UNITS.md
+#
+#--------------------------------------------------------------------
+
+#     Default model parameters
+#     R: Universal gas constant, units: J/(K*mol)
+      R : 8.3143
+
+#     T: Absolute temperature, units: K
+      T : 310.0
+
+#     F: Faraday constant, units: C/mmol
+      F : 96.4867
+
+#     Cm: Membrane capacitance, units: pF
+      Cm : 100.0
+
+#     Vol_cell: Cell volume (Table 1; not used by the equations), units: um^3
+      Vol_cell : 20100.0
+
+#     Vol_i: Intracellular (myoplasm) volume, units: um^3
+      Vol_i : 13668.0
+
+#     Vol_up: SR uptake compartment (NSR) volume, units: um^3
+      Vol_up : 1109.52
+
+#     Vol_rel: SR release compartment (JSR) volume, units: um^3
+      Vol_rel : 96.48
+
+#     K_o: Extracellular K concentration, units: mM
+      K_o : 5.4
+
+#     Na_o: Extracellular Na concentration, units: mM
+      Na_o : 140.0
+
+#     Ca_o: Extracellular Ca concentration, units: mM
+      Ca_o : 1.8
+
+#     Maximal conductances, units: nS/pF
+      g_Na : 7.8
+      g_K1 : 0.09
+      g_to : 0.1652
+      g_Kr : 0.0294
+      g_Ks : 0.129
+      g_CaL : 0.1238
+      g_bCa : 0.00113
+      g_bNa : 0.000674
+
+#     Maximal pump/exchanger currents, units: pA/pF
+      I_NaK_max : 0.60
+      I_NaCa_max : 1600.0
+      I_pCa_max : 0.275
+
+#     Half-saturation constants, units: mM
+      Km_Na_i : 10.0
+      Km_K_o : 1.5
+      Km_Na : 87.5
+      Km_Ca : 1.38
+
+#     k_sat: Saturation factor for I_NaCa, dimensionless
+      k_sat : 0.1
+
+#     gamma: Voltage dependence parameter for I_NaCa, dimensionless
+      gamma : 0.35
+
+#     I_up_max: Maximal I_up, units: mM/ms
+      I_up_max : 0.005
+
+#     K_up: [Ca]i half-saturation constant for I_up, units: mM
+      K_up : 0.00092
+
+#     Ca_up_max: Maximal Ca concentration in NSR, units: mM
+      Ca_up_max : 15.0
+
+#     k_rel: Maximal release rate for I_rel, units: 1/ms
+      k_rel : 30.0
+
+#     tau_tr: NSR -> JSR transfer time constant, units: ms
+      tau_tr : 180.0
+
+#     Ca buffers, units: mM
+      Cmdn_max : 0.05
+      Trpn_max : 0.07
+      Csqn_max : 10.0
+      Km_Cmdn : 0.00238
+      Km_Trpn : 0.0005
+      Km_Csqn : 0.8
+
+#     K_Q10: Temperature scaling for I_Kur and I_to kinetics
+      K_Q10 : 3.0
+
+#     Fn_rel_scale: scale on the RELEASE term of Fn (Eq. 68) only.
+#     1.0 = Eq. 68 exactly as published; 0.01 (default) reproduces the
+#     paper's Fig. 15.  See PARAMS_CRN.f.
+      Fn_rel_scale : 0.01
+
+#     Vrest: resting potential for stretch-activated currents, units: mV
+      Vrest : -81.18

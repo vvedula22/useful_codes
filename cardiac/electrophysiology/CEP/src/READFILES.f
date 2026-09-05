@@ -70,6 +70,11 @@ c     Load inputs from list
          cep%cepType = cepModel_BO
          nX = 4
 
+      CASE ("crn", "courtemanche")
+         cep%cepType = cepModel_CRN
+         nX = 6
+         nG = 15
+
       CASE ("fn","fitzhugh_nagumo")
          cep%cepType = cepModel_FN
          nX = 2
@@ -249,6 +254,11 @@ c     Check inputs for any inconsistencies
      2      " Nygren model"
       END IF
 
+      IF (flag .AND. cep%cepType.EQ.cepModel_CRN) THEN
+         err = " Excitation-contraction coupling is not allowed for "//
+     2      " Courtemanche (CRN) model"
+      END IF
+
       IF (flag .AND. cep%cepType.EQ.cepModel_PFIB) THEN
          err = " Excitation-contraction coupling is not allowed for "//
      2      " Stewart's model"
@@ -290,6 +300,11 @@ c     Check inputs for any inconsistencies
          IF (cep%cepType .EQ. cepModel_NYG) THEN
             err = "Implicit time integration is not allowed for "//
      3         "Nygren model. Use FE or RK4 instead"
+         END IF
+
+         IF (cep%cepType .EQ. cepModel_CRN) THEN
+            err = "Implicit time integration is not allowed for "//
+     3         "Courtemanche (CRN) model. Use FE or RK4 instead"
          END IF
 
          IF (cep%cepType .EQ. cepModel_PFIB) THEN

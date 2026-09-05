@@ -33,6 +33,18 @@
 !        International Journal for Numerical Methods in Biomedical
 !        Engineering, 28, 761–788. https://doi.org/10.1002/cnm.2473
 !
+!     UNITS: millisecond clock, currents as DENSITIES in pA/pF, so
+!     dV/dt = -(SUM I) is already in mV/ms and carries no Cm.  Cm
+!     (0.185 uF) enters only the concentration updates.  The stimulus
+!     amplitude is therefore a density: the example deck's -38 pA/pF
+!     is about -3800 pA absolute for a 100 pF cell, and is NOT
+!     interchangeable with the absolute-pA amplitudes the NYG and CRN
+!     decks use.
+!
+!     CAUTION: stimulus blocks, time steps and parameter values are
+!     not portable to or from the absolute-current models.  The
+!     cross-model table is kept in example/README_CEP_UNITS.md
+!
 !-----------------------------------------------------------------------
 
       MODULE TTPMOD

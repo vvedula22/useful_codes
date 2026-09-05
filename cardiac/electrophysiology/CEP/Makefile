@@ -68,6 +68,7 @@ MYFUN  = COM_TYPE.f    \
          MATFUN.f      \
          CEPMOD_AP.f   \
          CEPMOD_BO.f   \
+         CEPMOD_CRN.f  \
          CEPMOD_FN.f   \
          CEPMOD_NYG.f  \
          CEPMOD_PFIB.f \

@@ -1083,6 +1083,22 @@
       RETURN
       END SUBROUTINE CTXT
 !-----------------------------------------------------------------------
+!     Appends one row (time + n values) to the log file.
+!
+!     The exponent field is written with an explicit 3-digit width
+!     (E3).  Without it, Fortran's E edit descriptor OMITS the 'E'
+!     whenever the exponent magnitude exceeds 99 (F2018 13.7.2.1), so
+!     a value such as 9.809729286E-229 is written "9.809729286-229",
+!     which no generic ASCII reader (numpy.loadtxt, pandas, MATLAB
+!     load) can parse.  The CRN model reaches that range routinely:
+!     its I_rel gate u sits at ~1E-112 between beats (Eq. 65's sigmoid
+!     argument is ~ -257 at rest), so I_rel ~ u^2 ~ 1E-224 and roughly
+!     a quarter of all logged rows were affected.  Other models happen
+!     not to produce such magnitudes, but the format is shared, so
+!     fixing it here fixes every log.
+!
+!     Three digits are always sufficient and never truncate: RKIND is
+!     double precision, whose smallest denormal is ~4.9E-324.
       SUBROUTINE WTXT(fname, n, X, t)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: n
@@ -1095,7 +1111,7 @@
       OPEN(fid, FILE=TRIM(fName), STATUS='OLD', POSITION='APPEND')
       WRITE(fid,'(2X,F16.4)',ADVANCE='NO') t
       DO i=1, n
-         WRITE(fid,'(1X,1pE18.9)',ADVANCE='NO') X(i)
+         WRITE(fid,'(1X,1pE18.9E3)',ADVANCE='NO') X(i)
       END DO
       WRITE(fid,'(A)')
       CLOSE(fid)
